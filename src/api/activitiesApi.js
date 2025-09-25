@@ -8,17 +8,19 @@ export async function listActivities({ search='', page=1, pageSize=10 } = {}) {
 
     try {
         const res = await client(`/api/activities/search?${qs.toString()}`)
-        if (res?.data) return res
+        if (res?.data && res?.meta) return res
     } catch (e) {
-        if (e.status !== 404) throw e
+        if (![400, 404, 405].includes(e.status)) throw e
     }
 
     const all = await client('api/activities')
     const filtered = search
-        ? all.filter(a => 
-            (a.title || a.activityName || '').toLowerCase().includes(search.toLowerCase()) ||
-            (a.type || a.activityType || '').toLowerCase().includes(search.toLowerCase())
-            )
+        ? all.filter(a => {
+            const title = (a.title || a.activityName || '').toLowerCase()
+            const type  = (a.type  || a.activityType  || '').toLowerCase()
+            const q = search.toLowerCase()
+            return title.includes(q) || type.includes(q)
+        })
         : all
     
     const start = (page-1) * pageSize
