@@ -1,6 +1,5 @@
 import { client } from './client.js'
 
-// Ensure YYYY-MM-DD
 function toYMD(v) {
     if (!v) return undefined
     if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v
@@ -9,28 +8,24 @@ function toYMD(v) {
     return d.toISOString().slice(0, 10)
   }
   
-  /**
-   * Build ActivityRequestDTO from form + original DTO (for edit).
-   * Only includes fields your Spring DTO accepts.
-   */
-  function toActivityRequestDTO({ form, original, fallbackTripId }) {
+  function toActivityRequestDTO({ form = {}, original = null, fallbackTripId }) {
     const dto = {
-      tripId: original?.tripId ?? fallbackTripId,          // MUST be present
-      date:   toYMD(form?.date ?? original?.date),         // LocalDate format
-      title:  form?.title ?? original?.title,
-      notes:  form?.notes ?? original?.notes ?? undefined,
-      type:   (form?.type ?? original?.type),              // enum string
-      // Keep subtype fields if backend sent them (so we don't drop them)
-      landmarkName:      original?.landmarkName,
-      location:          original?.location,
-      difficultyLevel:   original?.difficultyLevel,
-      equipmentRequired: original?.equipmentRequired,
-      eventName:         original?.eventName,
-      organizer:         original?.organizer,
+      tripId: original?.tripId ?? fallbackTripId,
+      date:   toYMD(form.date ?? original?.date),
+      title:  form.title ?? original?.title,
+      notes:  form.notes ?? original?.notes,
+      type:   form.type  ?? original?.type,
+  
+      // subtype fields – prefer form values, then original
+      landmarkName:      form.landmarkName      ?? original?.landmarkName,
+      location:          form.location          ?? original?.location,
+      difficultyLevel:   form.difficultyLevel   ?? original?.difficultyLevel,
+      equipmentRequired: form.equipmentRequired ?? original?.equipmentRequired,
+      eventName:         form.eventName         ?? original?.eventName,
+      organizer:         form.organizer         ?? original?.organizer,
     }
   
-    // Remove undefined/null keys
-    return Object.fromEntries(Object.entries(dto).filter(([,v]) => v !== undefined && v !== null))
+    return Object.fromEntries(Object.entries(dto).filter(([, v]) => v !== undefined && v !== null && v !== ""))
   }
 
 export async function listActivities({ search = '', page = 1, pageSize = 10 } = {}) {
@@ -72,9 +67,3 @@ export async function listActivities({ search = '', page = 1, pageSize = 10 } = 
   
   export const deleteActivity = (id) =>
     client(`/api/activities/${encodeURIComponent(id)}`, { method: 'DELETE' })
-
-// ---------- Health ----------
-export async function checkHealth() {
-    const path = import.meta.env.VITE_HEALTH_PATH || '/api/health'
-    return client(path)
-  }
