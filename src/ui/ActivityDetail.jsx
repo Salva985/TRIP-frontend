@@ -23,7 +23,7 @@ export default function ActivityDetail() {
       await deleteActivity(id)
       navigate("/")
     } catch (e) {
-      alert(`Failed to delete: ${e.message}`) 
+      alert(`Failed to delete: ${e.message}`)
     }
   }
 
@@ -32,19 +32,32 @@ export default function ActivityDetail() {
   if (!s.data)   return <p>Not Found</p>
 
   const a = s.data
+  const title = a.title || a.activityName || `Activity #${id}`
+  const type  = a.type  || a.activityType  || "—"
+  const date  = a.date  || a.activityDate  || "—"
+  const notes = a.notes || a.description   || "—"
+
   return (
     <article className="space-y-3">
-      <h2 className="text-xl font-semibold">{a.title || a.activityName || `Activity #${id}`}</h2>
-      <p><strong>Type:</strong> {a.type || a.activityType || "—"}</p>
-      <p><strong>Date:</strong> {a.date || a.activityDate || "—"}</p>
-      <p><strong>Notes:</strong> {a.notes || a.description || "—"}</p>
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <p><strong>Type:</strong> {type}</p>
+      <p><strong>Date:</strong> {date}</p>
+      <p><strong>Notes:</strong> {notes}</p>
+
+      {/* Subtype (render only if present) */}
+      {a.landmarkName && <p><strong>Landmark:</strong> {a.landmarkName}</p>}
+      {a.location && <p><strong>Location:</strong> {a.location}</p>}
+
+      {a.difficultyLevel && <p><strong>Difficulty:</strong> {a.difficultyLevel}</p>}
+      {a.equipmentRequired && <p><strong>Equipment:</strong> {a.equipmentRequired}</p>}
+
+      {a.eventName && <p><strong>Event:</strong> {a.eventName}</p>}
+      {a.organizer && <p><strong>Organizer:</strong> {a.organizer}</p>}
 
       <div className="flex gap-2">
-
         <Link className="px-3 py-2 border rounded" to={`/activities/${id}/edit`}>Edit</Link>
         <button className="px-3 py-2 border rounded" onClick={onDelete}>Delete</button>
         <Link className="px-3 py-2 border rounded" to="/">Back</Link>
-
       </div>
     </article>
   )
