@@ -45,30 +45,41 @@ export default function ActivitiesList() {
 
   return (
     <section className="space-y-4">
-      <input
-        className="border rounded px-3 py-2 w-full"
-        placeholder="Buscar por título o tipo…"
-        value={q}
-        onChange={e => setQ(e.target.value)}
-      />
+      <div className="flex gap-2">
+        <input
+          className="border rounded px-3 py-2 w-full"
+          placeholder="Buscar por título o tipo…"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+        />
+        {/* opcional: atajo para crear */}
+        <Link className="px-3 py-2 border rounded whitespace-nowrap" to="/activities/new">+ New</Link>
+      </div>
 
       {state.loading && <p>Loading…</p>}
-      {state.error && <p className="text-red-600">Error: {state.error.message}</p>}
+      {state.error && (
+        <p className="text-red-600">
+          Error: {state.error.message}{state.error.detail ? ` — ${state.error.detail}` : ''}
+        </p>
+      )}
       {!state.loading && !state.error && state.data.length === 0 && <p>Sin resultados.</p>}
 
       <ul className="divide-y border rounded">
-        {state.data.map(a => (
-          <li key={a.id} className="p-3 flex items-center justify-between">
-            <div>
-              <p className="font-medium">{a.title || a.activityName || `Activity #${a.id}`}</p>
-              <p className="text-sm opacity-75">{a.type || a.activityType || '—'}</p>
-            </div>
-            <div className="flex gap-2">
-              <Link className="px-2 py-1 border rounded" to={`/activities/${a.id}`}>View</Link>
-              <Link className="px-2 py-1 border rounded" to={`/activities/${a.id}/edit`}>Edit</Link>
-            </div>
-          </li>
-        ))}
+        {state.data.map(a => {
+          const id = a.id ?? a.activityId ?? a.activityID ?? a._id
+          return (
+            <li key={id} className="p-3 flex items-center justify-between">
+              <div>
+                <p className="font-medium">{a.title || a.activityName || `Activity #${id}`}</p>
+                <p className="text-sm opacity-75">{a.type || a.activityType || '—'}</p>
+              </div>
+              <div className="flex gap-2">
+                <Link className="px-2 py-1 border rounded" to={`/activities/${id}`}>View</Link>
+                <Link className="px-2 py-1 border rounded" to={`/activities/${id}/edit`}>Edit</Link>
+              </div>
+            </li>
+          )
+        })}
       </ul>
 
       <div className="flex items-center justify-between">

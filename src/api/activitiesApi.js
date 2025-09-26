@@ -1,54 +1,80 @@
 import { client } from './client.js'
 
-export async function listActivities({ search='', page=1, pageSize=10 } = {}) {
-    const qs = new URLSearchParams()
-    if (search) qs.set('search', search)
-        qs.set('page', page)
-        qs.set('pageSize', pageSize)
-
-    try {
-        const res = await client(`/api/activities/search?${qs.toString()}`)
-        if (res?.data && res?.meta) return res
-    } catch (e) {
-        if (![400, 404, 405].includes(e.status)) throw e
+// Ensure YYYY-MM-DD
+function toYMD(v) {
+    if (!v) return undefined
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v
+    const d = new Date(v)
+    if (isNaN(d)) return undefined
+    return d.toISOString().slice(0, 10)
+  }
+  
+  /**
+   * Build ActivityRequestDTO from form + original DTO (for edit).
+   * Only includes fields your Spring DTO accepts.
+   */
+  function toActivityRequestDTO({ form, original, fallbackTripId }) {
+    const dto = {
+      tripId: original?.tripId ?? fallbackTripId,          // MUST be present
+      date:   toYMD(form?.date ?? original?.date),         // LocalDate format
+      title:  form?.title ?? original?.title,
+      notes:  form?.notes ?? original?.notes ?? undefined,
+      type:   (form?.type ?? original?.type),              // enum string
+      // Keep subtype fields if backend sent them (so we don't drop them)
+      landmarkName:      original?.landmarkName,
+      location:          original?.location,
+      difficultyLevel:   original?.difficultyLevel,
+      equipmentRequired: original?.equipmentRequired,
+      eventName:         original?.eventName,
+      organizer:         original?.organizer,
     }
+  
+    // Remove undefined/null keys
+    return Object.fromEntries(Object.entries(dto).filter(([,v]) => v !== undefined && v !== null))
+  }
 
-    const all = await client('api/activities')
+export async function listActivities({ search = '', page = 1, pageSize = 10 } = {}) {
+    const all = await client('/api/activities')
+  
     const filtered = search
-        ? all.filter(a => {
-            const title = (a.title || a.activityName || '').toLowerCase()
-            const type  = (a.type  || a.activityType  || '').toLowerCase()
-            const q = search.toLowerCase()
-            return title.includes(q) || type.includes(q)
+      ? all.filter(a => {
+          const title = (a.title || a.activityName || '').toLowerCase()
+          const type  = (a.type  || a.activityType  || '').toLowerCase()
+          const q = search.toLowerCase()
+          return title.includes(q) || type.includes(q)
         })
-        : all
-    
-    const start = (page-1) * pageSize
-    const data = filtered.slice(start, start + pageSize)
-    const meta = { page, pageSize, total: filtered.length }
+      : all
+  
+    const start = (page - 1) * pageSize
+    const data  = filtered.slice(start, start + pageSize)
+    const meta  = { page, pageSize, total: filtered.length }
     return { data, meta }
-}
+  }
 
-export const getActivity = (id) => client('/api/activities/${id}')
-
-export const createActivity = (payload) => 
-    client(`api/activities`, {
-        method: 'POST',
-        body: JSON.stringify(payload)
+  export const getActivity = (id) =>
+    client(`/api/activities/${encodeURIComponent(id)}`)
+  
+  export const createActivity = (form, { fallbackTripId = 1 } = {}) => {
+    const body = toActivityRequestDTO({ form, original: null, fallbackTripId })
+    return client('/api/activities', {
+      method: 'POST',
+      body: JSON.stringify(body),
     })
-
-export const updateActivity = (id, payload) => 
-    client(`/api/activities/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload)
+  }
+  
+  export const updateActivity = (id, { form, original }) => {
+    const body = toActivityRequestDTO({ form, original })
+    return client(`/api/activities/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
     })
+  }
+  
+  export const deleteActivity = (id) =>
+    client(`/api/activities/${encodeURIComponent(id)}`, { method: 'DELETE' })
 
-export const deleteActivity = (id) => 
-    client(`api/activities/${id}`, {
-        method: 'DELETE'
-    })
-
+// ---------- Health ----------
 export async function checkHealth() {
-    const path = import.meta.env.VITE_HEALTH_PATH || 'api/health'
+    const path = import.meta.env.VITE_HEALTH_PATH || '/api/health'
     return client(path)
-}
+  }

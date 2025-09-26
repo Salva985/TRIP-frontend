@@ -10,7 +10,30 @@ function join(baseUrl, path) {
 export async function client(path, { method = 'GET', headers, body } = {}) {
   const url = join(base, path)
 
-  const res = await fetch(url, {
+  const finalHeaders = { Accept: 'application/json', ...headers }
+  const hasBody = body !== undefined && body !== null
+
+  if (hasBody && !finalHeaders['Content-Type']) {
+    finalHeaders['Content-Type'] = 'application/json'
+  }
+
+  const options = { method, headers: finalHeaders }
+  if (hasBody) options.body = body
+
+  const res = await fetch(url, options)
+
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status} ${res.statusText}`)
+    err.status = res.status
+    try { err.detail = await res.text() } catch { err.detail = '' }
+    throw err
+  }
+
+  const ct = res.headers.get('content-type') || ''
+  return ct.includes('application/json') ? res.json() : null
+  
+
+/*   const res = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json', ...(headers || {}) },
     body
@@ -24,5 +47,5 @@ export async function client(path, { method = 'GET', headers, body } = {}) {
   }
 
   const ct = res.headers.get('content-type') || ''
-  return ct.includes('application/json') ? res.json() : null
+  return ct.includes('application/json') ? res.json() : null */
 }
