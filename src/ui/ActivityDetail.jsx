@@ -40,6 +40,7 @@ export default function ActivityDetail() {
   return (
     <article className="space-y-3">
       <h2 className="text-xl font-semibold">{title}</h2>
+      <p><strong>Trip:</strong> {a.tripName || `Trip #${a.tripId}`}</p>
       <p><strong>Type:</strong> {type}</p>
       <p><strong>Date:</strong> {date}</p>
       <p><strong>Notes:</strong> {notes}</p>
