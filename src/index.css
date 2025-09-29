@@ -1,4 +1,4 @@
-:root {
+/* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -24,8 +24,6 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -66,3 +64,16 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+ */
+
+ @tailwind base;
+ @tailwind components;
+ @tailwind utilities;
+
+/* Optional tiny reset that won't fight Tailwind */
+/* html, body, #root {
+  height: 100%;
+}
+body {
+  margin: 0;
+} */

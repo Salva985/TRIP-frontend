@@ -8,3 +8,11 @@ export const createTrip = (dto) =>
       method: "POST",
       body: JSON.stringify(dto),
     })
+
+export const getTrip = (id) =>
+    client(`/api/trips/${encodeURIComponent(id)}`)
+
+export const deleteTrip = (id) =>
+    client(`/api/trips/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+    })

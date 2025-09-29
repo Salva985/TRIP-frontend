@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import {
-  createActivity,
-  getActivity,
-  updateActivity,
-} from "../api/activitiesApi";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { createActivity, getActivity, updateActivity } from "../api/activitiesApi";
 import { listTrips, createTrip } from "../api/tripsApi";
 import { listDestinations, createDestination } from "../api/destinationsApi";
 
@@ -12,6 +8,7 @@ export default function ActivityForm({ mode }) {
   const isEdit = mode === "edit";
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [form, setForm] = useState({
     tripId: "",
@@ -89,6 +86,16 @@ export default function ActivityForm({ mode }) {
       off = true;
     };
   }, [id, isEdit]);
+
+  //tripId when creating
+  useEffect(() => {
+    if (!isEdit) {
+      const tid = searchParams.get("tripId");
+      if (tid) {
+        setForm((f) => ({ ...f, tripId: Number(tid) }));
+      }
+    }
+  }, []);
 
   // FETCH TRIPS (only when creating)
   useEffect(() => {
