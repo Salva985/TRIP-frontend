@@ -19,18 +19,18 @@ export default function HealthBadge() {
 
   const label =
     status === "ok"
-      ? "Conexión abierta"
+      ? "Network ON"
       : status === "fail"
-      ? "Sin conexión"
+      ? "Network OFF"
       : status === "loading"
       ? "Comprobando…"
-      : "Probar conexión";
+      : "Test Network";
 
   return (
     <button
       onClick={probe}
       className={`px-3 py-2 border rounded ${
-        status === "ok" ? "bg-green-100" : status === "fail" ? "bg-red-100" : ""
+        status === "ok" ? "bg-green-500" : status === "fail" ? "bg-red-500" : ""
       }`}
     >
       {label}
