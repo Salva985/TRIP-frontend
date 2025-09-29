@@ -65,6 +65,7 @@ export default function ActivityForm({ mode }) {
         setOriginal(a);
         setForm((f) => ({
           ...f,
+          tripId: a.tripId ?? f.tripId ?? "",
           title: a.title ?? "",
           type: a.type ?? "",
           date: a.date ?? "",
@@ -269,7 +270,7 @@ export default function ActivityForm({ mode }) {
           setError(new Error("Trip is required"))
           return
         }
-        await updateActivity(id, { ...form, tripId })
+        await updateActivity(id, { form: { ...form, tripId}, original })
       } else {
         if (!form.tripId) {
           setError(new Error("Trip is required"))

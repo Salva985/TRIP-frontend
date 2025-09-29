@@ -1,14 +1,58 @@
 import { client } from './client.js'
 
 function toYMD(v) {
+    if (!v) return undefined;
+    // If already YYYY-MM-DD, keep it
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    const d = new Date(v);
+    if (isNaN(d)) return undefined;
+    return d.toISOString().slice(0, 10);
+  }
+  
+  function toActivityRequestDTO({ form = {}, original = null, fallbackTripId = null }) {
+    const nz = v => (v === "" ? null : v);
+  
+    // pick tripId from form → original → fallback, then coerce to number
+    const tripIdRaw =
+      form?.tripId ?? original?.tripId ?? fallbackTripId ?? null;
+    const tripId =
+      tripIdRaw !== null && tripIdRaw !== undefined && tripIdRaw !== ""
+        ? Number(tripIdRaw)
+        : null;
+  
+    const from = (k) => form?.[k] ?? original?.[k];
+  
+    const dto = {
+      tripId,                                 // REQUIRED by backend
+      date:  toYMD(from('date')),             // REQUIRED (YYYY-MM-DD)
+      title: from('title'),                   // REQUIRED
+      type:  from('type'),                    // REQUIRED
+      notes: nz(from('notes')),               // optional
+  
+      // subtype (optional)
+      landmarkName:      nz(from('landmarkName')),
+      location:          nz(from('location')),
+      difficultyLevel:   nz(from('difficultyLevel')),
+      equipmentRequired: nz(from('equipmentRequired')),
+      eventName:         nz(from('eventName')),
+      organizer:         nz(from('organizer')),
+    };
+  
+    // drop only undefined (keep nulls so Spring sees "missing" vs "")
+    return Object.fromEntries(
+      Object.entries(dto).filter(([, v]) => v !== undefined)
+    );
+  }
+
+/* function toYMD(v) {
     if (!v) return undefined
     if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v
     const d = new Date(v)
     if (isNaN(d)) return undefined
     return d.toISOString().slice(0, 10)
-  }
+  } */
   
-  function toActivityRequestDTO({ form = {}, original = null, fallbackTripId }) {
+/*   function toActivityRequestDTO({ form = {}, original = null, fallbackTripId }) {
     const dto = {
       tripId: original?.tripId ?? fallbackTripId,
       date:   toYMD(form.date ?? original?.date),
@@ -26,7 +70,7 @@ function toYMD(v) {
     }
   
     return Object.fromEntries(Object.entries(dto).filter(([, v]) => v !== undefined && v !== null && v !== ""))
-  }
+  } */
 
 export async function listActivities({ search = '', page = 1, pageSize = 10 } = {}) {
     const all = await client('/api/activities')
@@ -49,7 +93,7 @@ export async function listActivities({ search = '', page = 1, pageSize = 10 } = 
   export const getActivity = (id) =>
     client(`/api/activities/${encodeURIComponent(id)}`)
   
-  export const createActivity = (form, { fallbackTripId = 1 } = {}) => {
+  export const createActivity = (form, { fallbackTripId = null } = {}) => {
     const body = toActivityRequestDTO({ form, original: null, fallbackTripId })
     return client('/api/activities', {
       method: 'POST',
@@ -58,7 +102,10 @@ export async function listActivities({ search = '', page = 1, pageSize = 10 } = 
   }
   
   export const updateActivity = (id, { form, original }) => {
-    const body = toActivityRequestDTO({ form, original })
+    const body = toActivityRequestDTO({ 
+        form, 
+        original
+    })
     return client(`/api/activities/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(body),
