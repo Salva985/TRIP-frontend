@@ -1,8 +1,12 @@
+// src/ui/ActivityForm.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { createActivity, getActivity, updateActivity } from "../api/activitiesApi";
-import { listTrips, createTrip } from "../api/tripsApi";
-import { listDestinations, createDestination } from "../api/destinationsApi";
+import {
+  createActivity,
+  getActivity,
+  updateActivity,
+} from "../api/activitiesApi";
+import { listTrips } from "../api/tripsApi";
 
 export default function ActivityForm({ mode }) {
   const isEdit = mode === "edit";
@@ -27,32 +31,12 @@ export default function ActivityForm({ mode }) {
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState(null);
 
-  // Trips for the selector
+  // trips (create mode)
   const [trips, setTrips] = useState([]);
-  const [tripsLoading, setTripsLoading] = useState(true);
+  const [tripsLoading, setTripsLoading] = useState(!isEdit);
   const [tripsError, setTripsError] = useState(null);
 
-  // Inline “new trip” UI state
-  const [creatingTrip, setCreatingTrip] = useState(false);
-  const [newTripName, setNewTripName] = useState("");
-  const [newTripStart, setNewTripStart] = useState("");
-  const [newTripEnd, setNewTripEnd] = useState("");
-  const [newTripDestinationId, setNewTripDestinationId] = useState("");
-  const [tripCreateError, setTripCreateError] = useState(null);
-
-  // Destinations for the new trip
-  const [destinations, setDestinations] = useState([]);
-  const [destLoading, setDestLoading] = useState(false);
-  const [destError, setDestError] = useState(null);
-
-  // Inline “new destination” (required fields per DTO)
-  const [creatingDest, setCreatingDest] = useState(false);
-  const [newDestCity, setNewDestCity] = useState("");
-  const [newDestCountry, setNewDestCountry] = useState("");
-  const [newDestTimezone, setNewDestTimezone] = useState("");
-  const [newDestCurrency, setNewDestCurrency] = useState("");
-  const [destCreateError, setDestCreateError] = useState(null);
-
+  // Load existing activity on edit
   useEffect(() => {
     if (!isEdit) return;
     let off = false;
@@ -87,17 +71,15 @@ export default function ActivityForm({ mode }) {
     };
   }, [id, isEdit]);
 
-  //tripId when creating
+  // Prefill from ?tripId= when creating
   useEffect(() => {
-    if (!isEdit) {
-      const tid = searchParams.get("tripId");
-      if (tid) {
-        setForm((f) => ({ ...f, tripId: Number(tid) }));
-      }
-    }
+    if (isEdit) return;
+    const tid = searchParams.get("tripId");
+    if (tid) setForm((f) => ({ ...f, tripId: Number(tid) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // FETCH TRIPS (only when creating)
+  // Fetch trips for selector (create mode)
   useEffect(() => {
     if (isEdit) return;
     let off = false;
@@ -118,44 +100,16 @@ export default function ActivityForm({ mode }) {
     };
   }, [isEdit]);
 
-  // FETCH DESTINATIONS
-  useEffect(() => {
-    if (isEdit) return;
-    let off = false;
-    setDestLoading(true);
-    setDestError(null);
-    listDestinations()
-      .then((d) => {
-        if (!off) setDestinations(d);
-      })
-      .catch((e) => {
-        if (!off) setDestError(e);
-      })
-      .finally(() => {
-        if (!off) setDestLoading(false);
-      });
-    return () => {
-      off = true;
-    };
-  }, [isEdit]);
-
   function onChange(e) {
     const { name, value } = e.target;
-
     if (name === "tripId") {
-      if (value === "__new__") {
-        setCreatingTrip(true);
-        setForm((f) => ({ ...f, tripId: "" }));
-        return;
-      }
       setForm((f) => ({ ...f, tripId: value ? Number(value) : "" }));
       return;
     }
-
     setForm((f) => ({ ...f, [name]: value }));
   }
 
-  // When type changes, clear irrelevant subtype fields
+  // Clear irrelevant subtype fields when type changes
   useEffect(() => {
     setForm((f) => {
       if (f.type === "SIGHTSEEING")
@@ -182,112 +136,42 @@ export default function ActivityForm({ mode }) {
           difficultyLevel: "",
           equipmentRequired: "",
         };
+        if (f.type === "OTHER") 
+          return { 
+        ...f,
+        landmarkName: "", 
+        location: "", 
+        difficultyLevel: "", 
+        equipmentRequired: "", 
+        eventName: "", 
+        organizer: "" };
       return f;
     });
   }, [form.type]);
 
-  async function onCreateDestination() {
-    setDestCreateError(null)
-  
-    const city = newDestCity.trim()
-    const country = newDestCountry.trim()
-    const timezone = newDestTimezone.trim()
-    const currencyCode = newDestCurrency.trim()
-  
-    if (!city || !country || !timezone || !currencyCode) {
-      setDestCreateError(new Error("All destination fields are required"))
-      return
-    }
-  
-    const dto = { city, country, timezone, currencyCode }
-  
-    try {
-      const created = await createDestination(dto)
-  
-      // Add to the list and select it for the Trip creator
-      setDestinations(prev => [...prev, created])
-      setNewTripDestinationId(created.id)
-  
-      // Reset inline UI
-      setCreatingDest(false)
-      setNewDestCity(""); setNewDestCountry(""); setNewDestTimezone(""); setNewDestCurrency("")
-    } catch (err) {
-      setDestCreateError(err)
-    }
-  }
-
-  async function onCreateTrip() {
-    setTripCreateError(null);
-
-    const dto = {
-      name: newTripName.trim(),
-      startDate: newTripStart || null,
-      endDate: newTripEnd || null,
-      destinationId: newTripDestinationId ? Number(newTripDestinationId) : null,
-      // tripType: undefined, // optional: add a selector if you want
-      // notes: undefined,
-    };
-
-    // Minimal validation to satisfy backend
-    if (!dto.name)
-      return setTripCreateError(new Error("Trip name is required"));
-    if (!dto.startDate || !dto.endDate)
-      return setTripCreateError(new Error("Start and end dates are required"));
-    if (!dto.destinationId)
-      return setTripCreateError(new Error("Destination is required"));
-
-    try {
-      const t = await createTrip(dto);
-      // Add to dropdown and select it
-      setTrips((prev) => [...prev, t]);
-      setForm((f) => ({ ...f, tripId: t.id }));
-
-      // Reset inline UI
-      setNewTripName("");
-      setNewTripStart("");
-      setNewTripEnd("");
-      setNewTripDestinationId("");
-      setCreatingTrip(false);
-    } catch (err) {
-      setTripCreateError(err);
-    }
-  }
-
   async function onSubmit(e) {
-    e.preventDefault()
-    setError(null)
-  
-    if (!form.title.trim()) {
-      setError(new Error("Title is required"))
-      return
-    }
-    if (!form.type?.trim()) {
-      setError(new Error("Type is required (SIGHTSEEING | ADVENTURE | CULTURAL)"))
-      return
-    }
-    if (!form.date?.trim()) {
-      setError(new Error("Date is required"))
-      return
-    }
-  
+    e.preventDefault();
+    setError(null);
+
+    if (!form.title.trim()) return setError(new Error("Title is required"));
+    if (!form.type?.trim())
+      return setError(
+        new Error("Type is required (SIGHTSEEING | ADVENTURE | CULTURAL | OTHER)")
+      );
+    if (!form.date?.trim()) return setError(new Error("Date is required"));
+
     try {
       if (isEdit) {
-        const tripId = form.tripId || original?.tripId
-        if (!tripId) {
-          setError(new Error("Trip is required"))
-          return
-        }
-        await updateActivity(id, { form: { ...form, tripId}, original })
+        const tripId = form.tripId || original?.tripId;
+        if (!tripId) return setError(new Error("Trip is required"));
+        await updateActivity(id, { form: { ...form, tripId }, original });
       } else {
-        if (!form.tripId) {
-          setError(new Error("Trip is required"))
-          return
-        }
-        await createActivity({ ...form, tripId: Number(form.tripId) })
+        if (!form.tripId) return setError(new Error("Trip is required"));
+        await createActivity({ ...form, tripId: Number(form.tripId) });
       }
-      navigate("/")
+      navigate("/");
     } catch (err) {
-      setError(err)
+      setError(err);
     }
   }
 
@@ -298,28 +182,28 @@ export default function ActivityForm({ mode }) {
       <h2 className="text-xl font-semibold">
         {isEdit ? "Edit Activity" : "New Activity"}
       </h2>
-  
-      {/* Show Trip name (read-only) in Edit mode */}
+
+      {/* Trip info / selector */}
       {isEdit && original && (
         <p className="text-sm opacity-75">
-          Trip: <strong>{original.tripName || `Trip #${original.tripId}`}</strong>
+          Trip:{" "}
+          <strong>{original.tripName || `Trip #${original.tripId}`}</strong>
         </p>
       )}
-  
-      {/* Trip selector */}
+
       {!isEdit && (
-        <div className="space-y-2">
-          <label className="block">
-            <span className="text-sm">Trip *</span>
-            {tripsLoading ? (
-              <div className="text-sm opacity-70">Loading trips…</div>
-            ) : tripsError ? (
-              <div className="text-sm text-red-600">Failed to load trips</div>
-            ) : (
+        <label className="block">
+          <span className="text-sm">Trip *</span>
+          {tripsLoading ? (
+            <div className="text-sm opacity-70">Loading trips…</div>
+          ) : tripsError ? (
+            <div className="text-sm text-red-600">Failed to load trips</div>
+          ) : (
+            <>
               <select
                 className="border rounded px-3 py-2 w-full"
                 name="tripId"
-                value={creatingTrip ? "__new__" : form.tripId || ""}
+                value={form.tripId || ""}
                 onChange={onChange}
               >
                 <option value="">Select a trip…</option>
@@ -328,163 +212,25 @@ export default function ActivityForm({ mode }) {
                     {t.name || t.tripName || `Trip #${t.id}`}
                   </option>
                 ))}
-                <option value="__new__">+ New trip…</option>
               </select>
-            )}
-          </label>
-  
-          {creatingTrip && (
-            <div className="space-y-2 border rounded p-3">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {/* New trip name */}
-                <input
-                  className="border rounded px-3 py-2"
-                  placeholder="New trip name"
-                  value={newTripName}
-                  onChange={(e) => setNewTripName(e.target.value)}
-                />
-  
-                {/* Destination select */}
-                <select
-                  className="border rounded px-3 py-2"
-                  value={newTripDestinationId}
-                  onChange={(e) => setNewTripDestinationId(e.target.value)}
+              <p className="mt-1 text-xs text-gray-500">
+                Don’t see your trip?{" "}
+                <a
+                  className="underline"
+                  href="/trips"
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  <option value="">Select destination…</option>
-                  {destLoading ? (
-                    <option disabled>Loading…</option>
-                  ) : destError ? (
-                    <option disabled>Failed to load</option>
-                  ) : (
-                    destinations.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name || d.city || `Destination #${d.id}`}
-                      </option>
-                    ))
-                  )}
-                </select>
-  
-                {/* Trip dates */}
-                <input
-                  type="date"
-                  className="border rounded px-3 py-2"
-                  placeholder="Start date"
-                  value={newTripStart}
-                  onChange={(e) => setNewTripStart(e.target.value)}
-                />
-                <input
-                  type="date"
-                  className="border rounded px-3 py-2"
-                  placeholder="End date"
-                  value={newTripEnd}
-                  onChange={(e) => setNewTripEnd(e.target.value)}
-                />
-              </div>
-  
-              {/* ───────────────────────────────────────────────
-                  Inline NEW destination (required DTO fields)
-                  DestinationRequestDTO: { city, country, timezone, currencyCode }
-                 ─────────────────────────────────────────────── */}
-              {!creatingDest ? (
-                <button
-                  type="button"
-                  className="px-3 py-2 border rounded"
-                  onClick={() => setCreatingDest(true)}
-                >
-                  + New destination…
-                </button>
-              ) : (
-                <div className="space-y-2 sm:col-span-2 border rounded p-3">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <input
-                      className="border rounded px-3 py-2"
-                      placeholder="City *"
-                      value={newDestCity}
-                      onChange={(e) => setNewDestCity(e.target.value)}
-                    />
-                    <input
-                      className="border rounded px-3 py-2"
-                      placeholder="Country *"
-                      value={newDestCountry}
-                      onChange={(e) => setNewDestCountry(e.target.value)}
-                    />
-                    <input
-                      className="border rounded px-3 py-2"
-                      placeholder="Timezone * (e.g. Europe/Madrid)"
-                      value={newDestTimezone}
-                      onChange={(e) => setNewDestTimezone(e.target.value)}
-                    />
-                    <input
-                      className="border rounded px-3 py-2"
-                      placeholder="Currency code * (e.g. EUR)"
-                      value={newDestCurrency}
-                      onChange={(e) => setNewDestCurrency(e.target.value)}
-                    />
-                  </div>
-  
-                  {destCreateError && (
-                    <p className="text-sm text-red-600">{destCreateError.message}</p>
-                  )}
-  
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="px-3 py-2 border rounded"
-                      onClick={onCreateDestination}
-                    >
-                      Create destination
-                    </button>
-                    <button
-                      type="button"
-                      className="px-3 py-2 border rounded"
-                      onClick={() => {
-                        setCreatingDest(false)
-                        setDestCreateError(null)
-                        setNewDestCity("")
-                        setNewDestCountry("")
-                        setNewDestTimezone("")
-                        setNewDestCurrency("")
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-  
-              {/* Trip creation actions */}
-              {tripCreateError && (
-                <p className="text-sm text-red-600">{tripCreateError.message}</p>
-              )}
-              <div className="flex gap-2">
-                <button
-                  className="px-3 py-2 border rounded"
-                  type="button"
-                  onClick={onCreateTrip}
-                >
-                  Create trip
-                </button>
-                <button
-                  className="px-3 py-2 border rounded"
-                  type="button"
-                  onClick={() => {
-                    setCreatingTrip(false)
-                    setNewTripName("")
-                    setNewTripStart("")
-                    setNewTripEnd("")
-                    setNewTripDestinationId("")
-                    setTripCreateError(null)
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+                  Create one
+                </a>{" "}
+                and come back.
+              </p>
+            </>
           )}
-        </div>
+        </label>
       )}
-  
-      {/* Title field */}
+
+      {/* Title */}
       <label className="block">
         <span className="text-sm">Title *</span>
         <input
@@ -494,8 +240,8 @@ export default function ActivityForm({ mode }) {
           onChange={onChange}
         />
       </label>
-  
-      {/* Type field */}
+
+      {/* Type */}
       <label className="block">
         <span className="text-sm">Type *</span>
         <select
@@ -508,10 +254,11 @@ export default function ActivityForm({ mode }) {
           <option value="SIGHTSEEING">SIGHTSEEING</option>
           <option value="ADVENTURE">ADVENTURE</option>
           <option value="CULTURAL">CULTURAL</option>
+          <option value="OTHER">OTHER</option>
         </select>
       </label>
-  
-      {/* Date field */}
+
+      {/* Date */}
       <label className="block">
         <span className="text-sm">Date *</span>
         <input
@@ -522,8 +269,8 @@ export default function ActivityForm({ mode }) {
           onChange={onChange}
         />
       </label>
-  
-      {/* Notes field */}
+
+      {/* Notes */}
       <label className="block">
         <span className="text-sm">Notes</span>
         <textarea
@@ -534,7 +281,7 @@ export default function ActivityForm({ mode }) {
           onChange={onChange}
         />
       </label>
-  
+
       {/* Subtype blocks */}
       {form.type === "SIGHTSEEING" && (
         <>
@@ -558,7 +305,6 @@ export default function ActivityForm({ mode }) {
           </label>
         </>
       )}
-  
       {form.type === "ADVENTURE" && (
         <>
           <label className="block">
@@ -581,7 +327,6 @@ export default function ActivityForm({ mode }) {
           </label>
         </>
       )}
-  
       {form.type === "CULTURAL" && (
         <>
           <label className="block">
@@ -604,13 +349,13 @@ export default function ActivityForm({ mode }) {
           </label>
         </>
       )}
-  
+
       {error && (
         <p className="text-red-600 text-sm">
           Error: {error.message || JSON.stringify(error)}
         </p>
       )}
-  
+
       <div className="flex gap-2">
         <button className="px-3 py-2 border rounded" type="submit">
           {isEdit ? "Save" : "Create"}
@@ -624,5 +369,5 @@ export default function ActivityForm({ mode }) {
         </button>
       </div>
     </form>
-  )
+  );
 }

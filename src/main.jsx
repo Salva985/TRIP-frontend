@@ -7,6 +7,7 @@ import ActivityDetail from './ui/ActivityDetail.jsx'
 import ActivityForm from './ui/ActivityForm.jsx'
 import TripsList from './ui/TripsList.jsx'
 import TripDetail from './ui/TripDetails.jsx'
+import TripCreatePage from "./ui/TripCreatePage.jsx"
 import './index.css'
 
 const router = createBrowserRouter([
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
 
       //Trips pages
       { path: 'trips', element: <TripsList /> },
+      { path: 'trips/new', element: <TripCreatePage /> },
       { path: 'trips/:id', element: <TripDetail /> }, 
 
       //Activities pages

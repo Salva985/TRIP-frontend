@@ -1,52 +1,98 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { listTrips, deleteTrip } from "../api/tripsApi";
+// src/ui/TripsList.jsx
+import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import { listTrips, deleteTrip } from "../api/tripsApi"
+import TripForm from "./TripForm"
 
 export default function TripsList() {
-  const [state, setState] = useState({ loading: true, error: null, trips: [] });
+  const [trips, setTrips] = useState([])
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const [showCreate, setShowCreate] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
-    let off = false;
+    let off = false
     listTrips()
-      .then(t => !off && setState({ loading: false, error: null, trips: t }))
-      .catch(e => !off && setState({ loading: false, error: e, trips: [] }));
-    return () => { off = true; };
-  }, []);
+      .then(data => { if (!off) setTrips(Array.isArray(data) ? data : []) })
+      .catch(err => { if (!off) setError(err) })
+      .finally(() => { if (!off) setLoading(false) })
+    return () => { off = true }
+  }, [])
 
   async function onDelete(id) {
-    if (!confirm("Delete this trip?")) return;
+    const ok = window.confirm(
+      "Are you sure you want to delete this trip? All activities in this trip will be lost permanently."
+    )
+    if (!ok) return
     try {
-      await deleteTrip(id);
-      setState(s => ({ ...s, trips: s.trips.filter(t => t.id !== id) }));
-    } catch (e) {
-      alert(e.message || "Failed to delete");
+      setDeletingId(id)
+      await deleteTrip(id)
+      setTrips(prev => prev.filter(t => t.id !== id))
+    } catch (err) {
+      alert(err?.message || "Failed to delete trip.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
-  if (state.loading) return <p>Loading…</p>;
-  if (state.error)   return <p className="text-red-600">Error: {state.error.message}</p>;
+  function onTripCreated(t) {
+    setTrips(prev => [...prev, t])
+    setShowCreate(false)
+  }
+
+  if (loading) return <p>Loading trips…</p>
+  if (error)   return <p className="text-red-600">Error: {error.message}</p>
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-semibold">Trips</h2>
+    <div className="space-y-4 max-w-2xl">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">All Trips</h2>
+        <button className="px-3 py-2 border rounded hover:bg-gray-50"
+                onClick={() => setShowCreate(v => !v)}>
+          {showCreate ? "Close" : "New Trip +"}
+        </button>
+      </div>
 
-      <ul className="divide-y border rounded">
-        {state.trips.map(t => (
-          <li key={t.id} className="p-3 flex items-center justify-between">
-            <div>
-              <p className="font-medium">{t.name || `Trip #${t.id}`}</p>
-              <p className="text-sm opacity-75">
-                {t.startDate} → {t.endDate}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Link className="px-2 py-1 border rounded" to={`/trips/${t.id}`}>Open</Link>
-              <button className="px-2 py-1 border rounded" onClick={() => onDelete(t.id)}>Delete</button>
-              <Link className="px-2 py-1 border rounded" to={`/activities/new?tripId=${t.id}`}>+ Activity</Link>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
+      {showCreate && (
+        <div className="bg-white border rounded p-4 shadow-sm">
+          <TripForm onSuccess={onTripCreated} onCancel={() => setShowCreate(false)} />
+        </div>
+      )}
+
+      {trips.length === 0 ? (
+        <p>No trips yet.</p>
+      ) : (
+        <ul className="space-y-4">
+          {trips.map(t => (
+            <li key={t.id}
+                className="bg-white shadow-md rounded-lg p-4 flex justify-between items-center hover:shadow-lg transition">
+              <div>
+                <p className="font-medium text-gray-800">{t.name}</p>
+                <p className="text-sm text-gray-500">
+                  {t.startDate} - {t.endDate}
+                  {t.destination && (t.destination.city || t.destination.country) ? (
+                    <> · {t.destination.city || ""}{t.destination.city && t.destination.country ? ", " : ""}{t.destination.country || ""}</>
+                  ) : null}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Link to={`/trips/${t.id}`} className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">
+                  View
+                </Link>
+                <button
+                  onClick={() => onDelete(t.id)}
+                  disabled={deletingId === t.id}
+                  className={`px-3 py-1 rounded text-white ${deletingId === t.id ? 'bg-red-400' : 'bg-red-600 hover:bg-red-700'}`}
+                >
+                  {deletingId === t.id ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }

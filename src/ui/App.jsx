@@ -14,7 +14,8 @@ export default function App() {
 
             <NavLink to="/" end className={linkCls}>Home</NavLink>
             <NavLink to="/trips" className={linkCls}>Trips</NavLink>
-            <NavLink to="/activities/new" className={linkCls}>New Trip/Activity</NavLink>
+            <NavLink to="/trips/new" className={linkCls}>New Trip</NavLink>
+            <NavLink to="/activities/new" className={linkCls}>New Activity</NavLink>
 
           </nav>
         </div>
