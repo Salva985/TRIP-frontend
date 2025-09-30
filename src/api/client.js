@@ -1,40 +1,58 @@
-const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+// src/api/client.js
 
-function join(baseUrl, path) {
-  const b = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+const BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081';
+
+function apiUrl(path) {
   const p = path.startsWith('/') ? path : `/${path}`;
-  return `${b}${p}`;
+  return new URL(p, BASE).toString();
+}
+
+function getToken() {
+  try {
+    return localStorage.getItem('auth_token') || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function client(path, { method = 'GET', headers, body } = {}) {
-  const url = join(base, path);
+  const url = apiUrl(path);
 
-  const finalHeaders = { Accept: 'application/json', ...headers };
+  const finalHeaders = { Accept: 'application/json', ...(headers || {}) };
   const hasBody = body !== undefined && body !== null;
 
   if (hasBody && !finalHeaders['Content-Type']) {
     finalHeaders['Content-Type'] = 'application/json';
   }
 
-  const options = { method, headers: finalHeaders };
-  if (hasBody) options.body = body;
+  const token = getToken();
+  if (token) finalHeaders['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(url, options);
+  const res = await fetch(url, {
+    method,
+    headers: finalHeaders,
+    body: hasBody ? body : undefined,
+  });
 
   const ct = res.headers.get('content-type') || '';
   const isJson = ct.includes('application/json');
 
   if (!res.ok) {
-    let detail = '';
-    try { detail = await res.text(); } catch { /* ignore */ }
-    const short = detail?.trim()?.slice(0, 500); // keep it readable
-    const err = new Error(`HTTP ${res.status} ${res.statusText}${short ? ` — ${short}` : ''}`);
+    let server = null;
+    try {
+      server = isJson ? await res.json() : await res.text();
+    } catch {}
+
+    const msg =
+      (server && typeof server === 'object' && (server.message || server.error)) ||
+      (typeof server === 'string' && server.slice(0, 500)) ||
+      `HTTP ${res.status} ${res.statusText}`;
+
+    const err = new Error(msg);
     err.status = res.status;
-    err.detail = detail;
+    err.detail = server;
     throw err;
   }
 
-  if (isJson) return res.json();
-  const text = await res.text().catch(() => '');
-  return text || null;
+  return isJson ? res.json() : (await res.text().catch(() => '')) || null;
 }
