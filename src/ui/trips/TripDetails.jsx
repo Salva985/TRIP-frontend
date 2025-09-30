@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { getTrip } from '../api/tripsApi'
-import { listActivities } from '../api/activitiesApi'
+import { getTrip } from '../../api/tripsApi'
+import { listActivities } from '../../api/activitiesApi'
 
 export default function TripDetail() {
   const { id } = useParams()

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { getActivity, deleteActivity } from "../api/activitiesApi"
+import { getActivity, deleteActivity } from "../../api/activitiesApi"
 
 export default function ActivityDetail() {
   const { id } = useParams()

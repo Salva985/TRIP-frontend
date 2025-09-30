@@ -1,6 +1,5 @@
 const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
-// join base + path ensuring exactly one slash between them
 function join(baseUrl, path) {
   const b = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const p = path.startsWith('/') ? path : `/${path}`;

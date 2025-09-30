@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { client } from "../api/client.js";
+import { client } from "../../api/client.js";
 
 export default function HealthBadge() {
   const [status, setStatus] = useState("idle");

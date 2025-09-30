@@ -5,8 +5,8 @@ import {
   createActivity,
   getActivity,
   updateActivity,
-} from "../api/activitiesApi";
-import { listTrips } from "../api/tripsApi";
+} from "../../api/activitiesApi";
+import { listTrips } from "../../api/tripsApi";
 
 export default function ActivityForm({ mode }) {
   const isEdit = mode === "edit";
@@ -136,15 +136,16 @@ export default function ActivityForm({ mode }) {
           difficultyLevel: "",
           equipmentRequired: "",
         };
-        if (f.type === "OTHER") 
-          return { 
-        ...f,
-        landmarkName: "", 
-        location: "", 
-        difficultyLevel: "", 
-        equipmentRequired: "", 
-        eventName: "", 
-        organizer: "" };
+      if (f.type === "OTHER")
+        return {
+          ...f,
+          landmarkName: "",
+          location: "",
+          difficultyLevel: "",
+          equipmentRequired: "",
+          eventName: "",
+          organizer: "",
+        };
       return f;
     });
   }, [form.type]);
@@ -156,7 +157,9 @@ export default function ActivityForm({ mode }) {
     if (!form.title.trim()) return setError(new Error("Title is required"));
     if (!form.type?.trim())
       return setError(
-        new Error("Type is required (SIGHTSEEING | ADVENTURE | CULTURAL | OTHER)")
+        new Error(
+          "Type is required (SIGHTSEEING | ADVENTURE | CULTURAL | OTHER)"
+        )
       );
     if (!form.date?.trim()) return setError(new Error("Date is required"));
 

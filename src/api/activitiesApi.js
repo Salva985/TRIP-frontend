@@ -37,22 +37,19 @@ function toActivityRequestDTO({ form = {}, original = null, fallbackTripId }) {
   );
 }
 
+// --- server-side pagination + search ---
 export async function listActivities({ search = "", page = 1, pageSize = 10 } = {}) {
-  const all = await client("/api/activities");
+  const qs = new URLSearchParams();
+  if (search?.trim()) qs.set("search", search.trim());
+  qs.set("page", String(page));
+  qs.set("pageSize", String(pageSize));
 
-  const filtered = search
-    ? all.filter((a) => {
-        const title = (a.title || a.activityName || "").toLowerCase();
-        const type  = (a.type  || a.activityType  || "").toLowerCase();
-        const q = search.toLowerCase();
-        return title.includes(q) || type.includes(q);
-      })
-    : all;
+  const res = await client(`/api/activities?${qs.toString()}`);
 
-  const start = (page - 1) * pageSize;
-  const data  = filtered.slice(start, start + pageSize);
-  const meta  = { page, pageSize, total: filtered.length };
-  return { data, meta };
+  if (res && Array.isArray(res.data) && res.meta) return res;
+
+  const data = Array.isArray(res) ? res : [];
+  return { data, meta: { page, pageSize, total: data.length } };
 }
 
 export const getActivity = (id) =>

@@ -1,7 +1,7 @@
 // src/ui/TripsList.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { listTrips, deleteTrip } from "../api/tripsApi";
+import { listTrips, deleteTrip } from "../../api/tripsApi";
 import TripForm from "./TripForm";
 
 function dateFromYMD(ymd) {
@@ -134,7 +134,10 @@ export default function TripsList() {
       {/* Inline create panel */}
       {showCreate && (
         <div className="bg-white border rounded p-4 shadow-sm">
-          <TripForm onSuccess={onTripCreated} onCancel={() => setShowCreate(false)} />
+          <TripForm
+            onSuccess={onTripCreated}
+            onCancel={() => setShowCreate(false)}
+          />
         </div>
       )}
 
@@ -158,7 +161,8 @@ export default function TripsList() {
                 <p className="font-medium text-gray-800 truncate">{t.name}</p>
                 <p className="text-sm text-gray-500">
                   {t.startDate} - {t.endDate}
-                  {t.destination && (t.destination.city || t.destination.country) ? (
+                  {t.destination &&
+                  (t.destination.city || t.destination.country) ? (
                     <>
                       {" "}
                       · {t.destination.city || ""}
@@ -180,7 +184,9 @@ export default function TripsList() {
                   onClick={() => onDelete(t.id)}
                   disabled={deletingId === t.id}
                   className={`px-3 py-1.5 rounded text-white ${
-                    deletingId === t.id ? "bg-red-400" : "bg-red-600 hover:bg-red-700"
+                    deletingId === t.id
+                      ? "bg-red-400"
+                      : "bg-red-600 hover:bg-red-700"
                   }`}
                 >
                   {deletingId === t.id ? "Deleting…" : "Delete"}

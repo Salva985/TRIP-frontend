@@ -1,7 +1,7 @@
 // src/ui/TripForm.jsx
 import { useEffect, useState } from "react";
-import { createTrip } from "../api/tripsApi";
-import { listDestinations, createDestination } from "../api/destinationsApi";
+import { createTrip } from "../../api/tripsApi";
+import { listDestinations, createDestination } from "../../api/destinationsApi";
 
 function toYMD(v) {
   if (!v) return "";
@@ -246,7 +246,11 @@ export default function TripForm({ onSuccess, onCancel }) {
           )}
 
           <div className="flex gap-2">
-            <button type="button" className="px-3 py-2 border rounded" onClick={onCreateDestination}>
+            <button
+              type="button"
+              className="px-3 py-2 border rounded"
+              onClick={onCreateDestination}
+            >
               Create destination
             </button>
             <button
@@ -276,9 +280,9 @@ export default function TripForm({ onSuccess, onCancel }) {
             onChange={(e) => setTripType(e.target.value)}
           >
             <option value="">—</option>
-            <option value="LEISURE">SIGHTSEEING</option>
-            <option value="BUSINESS">ADVENTURE</option>
-            <option value="ADVENTURE">CULTURAL</option>
+            <option value="LEISURE">LEISURE</option>
+            <option value="BUSINESS">BUSINESS</option>
+            <option value="ADVENTURE">ADVENTURE</option>
             <option value="OTHER">OTHER</option>
           </select>
         </label>
@@ -307,7 +311,11 @@ export default function TripForm({ onSuccess, onCancel }) {
         >
           {submitting ? "Creating…" : "Create trip"}
         </button>
-        <button type="button" className="px-4 py-2 border rounded" onClick={onCancel}>
+        <button
+          type="button"
+          className="px-4 py-2 border rounded"
+          onClick={onCancel}
+        >
           Cancel
         </button>
       </div>

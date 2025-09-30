@@ -1,7 +1,7 @@
 // src/ui/TripsList.jsx
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { listTrips, deleteTrip } from "../api/tripsApi"
+import { listTrips, deleteTrip } from "../../api/tripsApi"
 import TripForm from "./TripForm"
 
 export default function TripsList() {
