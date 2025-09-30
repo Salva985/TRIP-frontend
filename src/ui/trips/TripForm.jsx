@@ -149,176 +149,187 @@ export default function TripForm({ onSuccess, onCancel }) {
       setSubmitting(false);
     }
   }
-
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
-      <h2 className="text-xl font-semibold">New Trip</h2>
-
-      <label className="block">
-        <span className="text-sm">Trip name *</span>
-        <input
-          className="border rounded px-3 py-2 w-full"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </label>
-
-      <div className="grid sm:grid-cols-2 gap-3">
+    <section className="max-w-2xl">
+      <h2 className="text-xl font-semibold mb-3">New Trip</h2>
+  
+      <form onSubmit={onSubmit} className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 sm:p-6 space-y-4">
+        {/* Trip name */}
         <label className="block">
-          <span className="text-sm">Start date *</span>
+          <span className="text-sm text-gray-700">Trip name <span className="text-red-500">*</span></span>
           <input
-            type="date"
-            className="border rounded px-3 py-2 w-full"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. London Adventure Week"
           />
         </label>
-        <label className="block">
-          <span className="text-sm">End date *</span>
-          <input
-            type="date"
-            className="border rounded px-3 py-2 w-full"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </label>
-      </div>
-
-      <label className="block">
-        <span className="text-sm">Destination *</span>
-        <select
-          className="border rounded px-3 py-2 w-full"
-          value={creatingDest ? "__new_dest__" : destinationId || ""}
-          onChange={onDestinationChange}
-        >
-          <option value="">Select destination…</option>
-          {destLoading ? (
-            <option disabled>Loading…</option>
-          ) : destError ? (
-            <option disabled>Failed to load</option>
-          ) : (
-            destinations.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.city}, {d.country}
-              </option>
-            ))
-          )}
-          <option value="__new_dest__">+ New destination…</option>
-        </select>
-      </label>
-
-      {creatingDest && (
-        <div className="space-y-3 border rounded p-3 bg-gray-50">
-          <div className="grid sm:grid-cols-2 gap-3">
+  
+        {/* Dates */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="block">
+            <span className="text-sm text-gray-700">Start date <span className="text-red-500">*</span></span>
             <input
-              className="border rounded px-3 py-2"
-              placeholder="City *"
-              value={newCity}
-              onChange={(e) => setNewCity(e.target.value)}
+              type="date"
+              className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
             />
+          </label>
+  
+          <label className="block">
+            <span className="text-sm text-gray-700">End date <span className="text-red-500">*</span></span>
             <input
-              className="border rounded px-3 py-2"
-              placeholder="Country *"
-              value={newCountry}
-              onChange={(e) => setNewCountry(e.target.value)}
+              type="date"
+              className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
             />
-            <input
-              className="border rounded px-3 py-2"
-              placeholder="Timezone * (e.g. Europe/Madrid)"
-              value={newTz}
-              onChange={(e) => setNewTz(e.target.value)}
-            />
-            <select
-              className="border rounded px-3 py-2"
-              value={newCurrency}
-              onChange={(e) => setNewCurrency(e.target.value)}
-            >
-              <option value="">Select currency…</option>
-              <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
-              <option value="GBP">GBP</option>
-              <option value="OTHER">OTHER</option>
-            </select>
-          </div>
-
-          {destCreateError && (
-            <p className="text-sm text-red-600">{destCreateError.message}</p>
-          )}
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="px-3 py-2 border rounded"
-              onClick={onCreateDestination}
-            >
-              Create destination
-            </button>
-            <button
-              type="button"
-              className="px-3 py-2 border rounded"
-              onClick={() => {
-                setCreatingDest(false);
-                setDestCreateError(null);
-                setNewCity("");
-                setNewCountry("");
-                setNewTz("");
-                setNewCurrency("");
-              }}
-            >
-              Cancel
-            </button>
-          </div>
+          </label>
         </div>
-      )}
-
-      <div className="grid sm:grid-cols-2 gap-3">
+  
+        {/* Destination selector */}
         <label className="block">
-          <span className="text-sm">Trip type (optional)</span>
+          <span className="text-sm text-gray-700">Destination <span className="text-red-500">*</span></span>
           <select
-            className="border rounded px-3 py-2 w-full"
-            value={tripType}
-            onChange={(e) => setTripType(e.target.value)}
+            className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={creatingDest ? "__new_dest__" : destinationId || ""}
+            onChange={onDestinationChange}
           >
-            <option value="">—</option>
-            <option value="LEISURE">LEISURE</option>
-            <option value="BUSINESS">BUSINESS</option>
-            <option value="ADVENTURE">ADVENTURE</option>
-            <option value="OTHER">OTHER</option>
+            <option value="">Select destination…</option>
+            {destLoading ? (
+              <option disabled>Loading…</option>
+            ) : destError ? (
+              <option disabled>Failed to load</option>
+            ) : (
+              destinations.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.city}, {d.country}
+                </option>
+              ))
+            )}
+            <option value="__new_dest__">+ New destination…</option>
           </select>
         </label>
-        <label className="block">
-          <span className="text-sm">Notes (optional)</span>
-          <input
-            className="border rounded px-3 py-2 w-full"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Anything to remember…"
-          />
-        </label>
-      </div>
-
-      {error && (
-        <p className="text-sm text-red-600">
-          {error.detail || error.message || "Failed to create trip"}
-        </p>
-      )}
-
-      <div className="flex gap-2">
-        <button
-          className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-60"
-          type="submit"
-          disabled={submitting}
-        >
-          {submitting ? "Creating…" : "Create trip"}
-        </button>
-        <button
-          type="button"
-          className="px-4 py-2 border rounded"
-          onClick={onCancel}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
+  
+        {/* Inline NEW destination */}
+        {creatingDest && (
+          <div className="space-y-3 border rounded-lg p-3 sm:p-4 bg-gray-50">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <input
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="City *"
+                value={newCity}
+                onChange={(e) => setNewCity(e.target.value)}
+              />
+              <input
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Country *"
+                value={newCountry}
+                onChange={(e) => setNewCountry(e.target.value)}
+              />
+              <input
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Timezone * (e.g. Europe/Madrid)"
+                value={newTz}
+                onChange={(e) => setNewTz(e.target.value)}
+              />
+              <select
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={newCurrency}
+                onChange={(e) => setNewCurrency(e.target.value)}
+              >
+                <option value="">Select currency…</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+                <option value="OTHER">OTHER</option>
+              </select>
+            </div>
+  
+            {destCreateError && (
+              <p className="text-sm text-red-600">{destCreateError.message}</p>
+            )}
+  
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onCreateDestination}
+                className="px-4 py-2 rounded border hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Create destination
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCreatingDest(false);
+                  setDestCreateError(null);
+                  setNewCity("");
+                  setNewCountry("");
+                  setNewTz("");
+                  setNewCurrency("");
+                }}
+                className="px-4 py-2 rounded border hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+  
+        {/* Optional fields */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="block">
+            <span className="text-sm text-gray-700">Trip type (optional)</span>
+            <select
+              className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={tripType}
+              onChange={(e) => setTripType(e.target.value)}
+            >
+              <option value="">—</option>
+              <option value="LEISURE">LEISURE</option>
+              <option value="BUSINESS">BUSINESS</option>
+              <option value="ADVENTURE">ADVENTURE</option>
+              <option value="OTHER">OTHER</option>
+            </select>
+          </label>
+  
+          <label className="block">
+            <span className="text-sm text-gray-700">Notes (optional)</span>
+            <input
+              className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Anything to remember…"
+            />
+          </label>
+        </div>
+  
+        {/* Error */}
+        {error && (
+          <p className="text-sm text-red-600">
+            {error.detail || error.message || "Failed to create trip"}
+          </p>
+        )}
+  
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {submitting ? "Creating…" : "Create trip"}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded border hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </section>
+  )
 }

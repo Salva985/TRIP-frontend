@@ -181,196 +181,197 @@ export default function ActivityForm({ mode }) {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <form className="space-y-3 max-w-lg" onSubmit={onSubmit}>
-      <h2 className="text-xl font-semibold">
+    <section className="max-w-2xl">
+      {/* Page title */}
+      <h2 className="text-xl font-semibold mb-3">
         {isEdit ? "Edit Activity" : "New Activity"}
       </h2>
-
-      {/* Trip info / selector */}
-      {isEdit && original && (
-        <p className="text-sm opacity-75">
-          Trip:{" "}
-          <strong>{original.tripName || `Trip #${original.tripId}`}</strong>
-        </p>
-      )}
-
-      {!isEdit && (
-        <label className="block">
-          <span className="text-sm">Trip *</span>
-          {tripsLoading ? (
-            <div className="text-sm opacity-70">Loading trips…</div>
-          ) : tripsError ? (
-            <div className="text-sm text-red-600">Failed to load trips</div>
-          ) : (
-            <>
-              <select
-                className="border rounded px-3 py-2 w-full"
-                name="tripId"
-                value={form.tripId || ""}
-                onChange={onChange}
-              >
-                <option value="">Select a trip…</option>
-                {trips.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name || t.tripName || `Trip #${t.id}`}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Don’t see your trip?{" "}
-                <a
-                  className="underline"
-                  href="/trips"
-                  target="_blank"
-                  rel="noreferrer"
+  
+      {/* Card */}
+      <form
+        onSubmit={onSubmit}
+        className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 sm:p-6 space-y-4"
+      >
+        {/* Trip info / selector */}
+        {isEdit && original && (
+          <p className="text-sm text-gray-600">
+            Trip: <strong>{original.tripName || `Trip #${original.tripId}`}</strong>
+          </p>
+        )}
+  
+        {!isEdit && (
+          <label className="block">
+            <span className="text-sm text-gray-700">Trip <span className="text-red-500">*</span></span>
+            {tripsLoading ? (
+              <div className="text-sm text-gray-500 mt-1">Loading trips…</div>
+            ) : tripsError ? (
+              <div className="text-sm text-red-600 mt-1">Failed to load trips</div>
+            ) : (
+              <>
+                <select
+                  name="tripId"
+                  value={form.tripId || ""}
+                  onChange={onChange}
+                  className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  Create one
-                </a>{" "}
-                and come back.
-              </p>
-            </>
-          )}
+                  <option value="">Select a trip…</option>
+                  {trips.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name || t.tripName || `Trip #${t.id}`}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+          </label>
+        )}
+  
+        {/* Title / Type / Date */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="block">
+            <span className="text-sm text-gray-700">Title <span className="text-red-500">*</span></span>
+            <input
+              name="title"
+              value={form.title}
+              onChange={onChange}
+              className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </label>
+  
+          <label className="block">
+            <span className="text-sm text-gray-700">Type <span className="text-red-500">*</span></span>
+            <select
+              name="type"
+              value={form.type}
+              onChange={onChange}
+              className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select type…</option>
+              <option value="SIGHTSEEING">SIGHTSEEING</option>
+              <option value="ADVENTURE">ADVENTURE</option>
+              <option value="CULTURAL">CULTURAL</option>
+              <option value="OTHER">OTHER</option>
+            </select>
+          </label>
+  
+          <label className="block sm:col-span-2">
+            <span className="text-sm text-gray-700">Date <span className="text-red-500">*</span></span>
+            <input
+              type="date"
+              name="date"
+              value={form.date}
+              onChange={onChange}
+              className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </label>
+        </div>
+  
+        {/* Notes */}
+        <label className="block">
+          <span className="text-sm text-gray-700">Notes</span>
+          <textarea
+            rows={4}
+            name="notes"
+            value={form.notes}
+            onChange={onChange}
+            className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </label>
-      )}
-
-      {/* Title */}
-      <label className="block">
-        <span className="text-sm">Title *</span>
-        <input
-          className="border rounded px-3 py-2 w-full"
-          name="title"
-          value={form.title}
-          onChange={onChange}
-        />
-      </label>
-
-      {/* Type */}
-      <label className="block">
-        <span className="text-sm">Type *</span>
-        <select
-          className="border rounded px-3 py-2 w-full"
-          name="type"
-          value={form.type}
-          onChange={onChange}
-        >
-          <option value="">Select type…</option>
-          <option value="SIGHTSEEING">SIGHTSEEING</option>
-          <option value="ADVENTURE">ADVENTURE</option>
-          <option value="CULTURAL">CULTURAL</option>
-          <option value="OTHER">OTHER</option>
-        </select>
-      </label>
-
-      {/* Date */}
-      <label className="block">
-        <span className="text-sm">Date *</span>
-        <input
-          type="date"
-          className="border rounded px-3 py-2 w-full"
-          name="date"
-          value={form.date}
-          onChange={onChange}
-        />
-      </label>
-
-      {/* Notes */}
-      <label className="block">
-        <span className="text-sm">Notes</span>
-        <textarea
-          className="border rounded px-3 py-2 w-full"
-          rows={4}
-          name="notes"
-          value={form.notes}
-          onChange={onChange}
-        />
-      </label>
-
-      {/* Subtype blocks */}
-      {form.type === "SIGHTSEEING" && (
-        <>
-          <label className="block">
-            <span className="text-sm">Landmark name</span>
-            <input
-              className="border rounded px-3 py-2 w-full"
-              name="landmarkName"
-              value={form.landmarkName}
-              onChange={onChange}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm">Location</span>
-            <input
-              className="border rounded px-3 py-2 w-full"
-              name="location"
-              value={form.location}
-              onChange={onChange}
-            />
-          </label>
-        </>
-      )}
-      {form.type === "ADVENTURE" && (
-        <>
-          <label className="block">
-            <span className="text-sm">Difficulty level</span>
-            <input
-              className="border rounded px-3 py-2 w-full"
-              name="difficultyLevel"
-              value={form.difficultyLevel}
-              onChange={onChange}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm">Equipment required</span>
-            <input
-              className="border rounded px-3 py-2 w-full"
-              name="equipmentRequired"
-              value={form.equipmentRequired}
-              onChange={onChange}
-            />
-          </label>
-        </>
-      )}
-      {form.type === "CULTURAL" && (
-        <>
-          <label className="block">
-            <span className="text-sm">Event name</span>
-            <input
-              className="border rounded px-3 py-2 w-full"
-              name="eventName"
-              value={form.eventName}
-              onChange={onChange}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm">Organizer</span>
-            <input
-              className="border rounded px-3 py-2 w-full"
-              name="organizer"
-              value={form.organizer}
-              onChange={onChange}
-            />
-          </label>
-        </>
-      )}
-
-      {error && (
-        <p className="text-red-600 text-sm">
-          Error: {error.message || JSON.stringify(error)}
-        </p>
-      )}
-
-      <div className="flex gap-2">
-        <button className="px-3 py-2 border rounded" type="submit">
-          {isEdit ? "Save" : "Create"}
-        </button>
-        <button
-          className="px-3 py-2 border rounded"
-          type="button"
-          onClick={() => history.back()}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+  
+        {/* Subtype sections */}
+        {form.type === "SIGHTSEEING" && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-sm text-gray-700">Landmark name</span>
+              <input
+                name="landmarkName"
+                value={form.landmarkName}
+                onChange={onChange}
+                className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm text-gray-700">Location</span>
+              <input
+                name="location"
+                value={form.location}
+                onChange={onChange}
+                className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+          </div>
+        )}
+  
+        {form.type === "ADVENTURE" && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-sm text-gray-700">Difficulty level</span>
+              <input
+                name="difficultyLevel"
+                value={form.difficultyLevel}
+                onChange={onChange}
+                className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm text-gray-700">Equipment required</span>
+              <input
+                name="equipmentRequired"
+                value={form.equipmentRequired}
+                onChange={onChange}
+                className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+          </div>
+        )}
+  
+        {form.type === "CULTURAL" && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-sm text-gray-700">Event name</span>
+              <input
+                name="eventName"
+                value={form.eventName}
+                onChange={onChange}
+                className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm text-gray-700">Organizer</span>
+              <input
+                name="organizer"
+                value={form.organizer}
+                onChange={onChange}
+                className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+          </div>
+        )}
+  
+        {/* Error */}
+        {error && (
+          <p className="text-red-600 text-sm">
+            Error: {error.message || JSON.stringify(error)}
+          </p>
+        )}
+  
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {isEdit ? "Save" : "Create"}
+          </button>
+          <button
+            type="button"
+            onClick={() => history.back()}
+            className="px-4 py-2 rounded border hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </section>
   );
 }

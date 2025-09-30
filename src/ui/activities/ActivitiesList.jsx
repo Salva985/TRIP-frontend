@@ -68,40 +68,59 @@ export default function ActivitiesList() {
 
   return (
     <section className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2">
+      {/* Heading + right tools */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">All Activities</h2>
+  
+        {/* right: per-page + New */}
+        <div className="flex items-center gap-2">
+          <select
+            className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={pageSize}
+            onChange={(e) =>
+              setParams((p) => {
+                p.set("page", "1");
+                p.set("pageSize", e.target.value);
+                return p;
+              })
+            }
+            aria-label="Items per page"
+            title="Page size"
+          >
+            {[5, 10, 20, 50].map((n) => (
+              <option key={n} value={n}>
+                {n}/page
+              </option>
+            ))}
+          </select>
+  
+          <Link
+            to="/activities/new"
+            className="hidden sm:inline-flex px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            + New
+          </Link>
+        </div>
+      </div>
+  
+      {/* Search row (mobile shows New here) */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <input
-          className="border rounded px-3 py-2 w-full"
+          className="w-full sm:w-96 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Search by title or type…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          aria-label="Search activities"
         />
-        <select
-          className="border rounded px-2 py-2"
-          value={pageSize}
-          onChange={(e) =>
-            setParams((p) => {
-              p.set("page", "1");
-              p.set("pageSize", e.target.value);
-              return p;
-            })
-          }
-          title="Page size"
-        >
-          {[5, 10, 20, 50].map((n) => (
-            <option key={n} value={n}>
-              {n}/page
-            </option>
-          ))}
-        </select>
+  
         <Link
-          className="px-3 py-2 border rounded whitespace-nowrap"
           to="/activities/new"
+          className="sm:hidden px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           + New
         </Link>
       </div>
-
+  
       {/* States */}
       {state.loading && <p>Loading…</p>}
       {state.error && (
@@ -113,43 +132,50 @@ export default function ActivitiesList() {
       {!state.loading && !state.error && state.data.length === 0 && (
         <p>No results.</p>
       )}
-
-      {/* List */}
-      <ul className="divide-y border rounded bg-white">
+  
+      {/* List as cards */}
+      <ul className="space-y-3">
         {state.data.map((a) => {
           const id = a.id ?? a.activityId ?? a.activityID ?? a._id;
           return (
-            <li key={id} className="p-3 flex items-center justify-between">
-              <div>
-                <p className="font-medium">{a.title || `Activity #${id}`}</p>
-                <p className="text-sm opacity-75">
-                  {a.type} • {a.date} •{" "}
-                  {a.tripName ? `Trip: ${a.tripName}` : ""}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Link
-                  className="px-2 py-1 border rounded"
-                  to={`/activities/${id}`}
-                >
-                  View
-                </Link>
-                <Link
-                  className="px-2 py-1 border rounded"
-                  to={`/activities/${id}/edit`}
-                >
-                  Edit
-                </Link>
+            <li
+              key={id}
+              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">
+                    {a.title || `Activity #${id}`}
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                    {a.type} • {a.date}
+                    {a.tripName ? ` • Trip: ${a.tripName}` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Link
+                    className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    to={`/activities/${id}`}
+                  >
+                    View
+                  </Link>
+                  <Link
+                    className="px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    to={`/activities/${id}/edit`}
+                  >
+                    Edit
+                  </Link>
+                </div>
               </div>
             </li>
           );
         })}
       </ul>
-
+  
       {/* Pagination */}
-      <div className="flex items-center justify-between">
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
         <button
-          className="px-3 py-2 border rounded disabled:opacity-50"
+          className="px-3 py-2 border rounded disabled:opacity-50 transition"
           onClick={() =>
             setParams((p) => {
               p.set("page", String(Math.max(1, page - 1)));
@@ -160,14 +186,14 @@ export default function ActivitiesList() {
         >
           Previous
         </button>
-
+  
         <span className="text-sm">
           Page {state.meta.page} / {totalPages} &nbsp;·&nbsp; Total{" "}
           {state.meta.total}
         </span>
-
+  
         <button
-          className="px-3 py-2 border rounded disabled:opacity-50"
+          className="px-3 py-2 border rounded disabled:opacity-50 transition"
           onClick={() =>
             setParams((p) => {
               p.set("page", String(page + 1));
@@ -180,5 +206,5 @@ export default function ActivitiesList() {
         </button>
       </div>
     </section>
-  );
+  )
 }

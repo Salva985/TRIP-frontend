@@ -30,9 +30,8 @@ export default function App() {
               <Link
                 to="/"
                 className="text-2xl font-bold whitespace-nowrap hover:text-blue-400 transition-colors"
-                onClick={closeMenu}
-              >
-                TRIP App
+                onClick={closeMenu}>
+                  TRIP App
               </Link>
 
               {/* Desktop nav */}
@@ -129,7 +128,7 @@ export default function App() {
       </header>
 
       {/* Page content */}
-      <main className="mx-auto w-full max-w-5xl px-3 sm:px-6 py-6">
+      <main className="mx-auto max-w-6xl px-3 sm:px-4 lg:px-6 py-4">
         <Outlet />
       </main>
     </div>
