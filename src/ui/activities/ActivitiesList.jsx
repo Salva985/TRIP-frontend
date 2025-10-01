@@ -71,7 +71,7 @@ export default function ActivitiesList() {
       {/* Heading + right tools */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">All Activities</h2>
-  
+
         {/* right: per-page + New */}
         <div className="flex items-center gap-2">
           <select
@@ -93,7 +93,7 @@ export default function ActivitiesList() {
               </option>
             ))}
           </select>
-  
+
           <Link
             to="/activities/new"
             className="hidden sm:inline-flex px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -102,7 +102,7 @@ export default function ActivitiesList() {
           </Link>
         </div>
       </div>
-  
+
       {/* Search row (mobile shows New here) */}
       <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <input
@@ -112,7 +112,7 @@ export default function ActivitiesList() {
           onChange={(e) => setQ(e.target.value)}
           aria-label="Search activities"
         />
-  
+
         <Link
           to="/activities/new"
           className="sm:hidden px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -120,19 +120,35 @@ export default function ActivitiesList() {
           + New
         </Link>
       </div>
-  
+
       {/* States */}
       {state.loading && <p>Loading…</p>}
       {state.error && (
         <p className="text-red-600">
-          Error: {state.error.message}
-          {state.error.detail ? ` — ${state.error.detail}` : ""}
+          Error:{" "}
+          {state.error.status === 401 || state.error.status === 403
+            ? "Unauthorized — please login again."
+            : state.error.message}
         </p>
       )}
+
       {!state.loading && !state.error && state.data.length === 0 && (
-        <p>No results.</p>
+        <div className="rounded-lg border border-dashed p-4 text-gray-700 bg-white">
+          <p className="font-medium">No activities yet.</p>
+          <p className="text-sm mt-1">
+            Add your first{" "}
+            <Link to="/trips/new" className="text-blue-600 underline">
+              trip
+            </Link>
+            , then create an{" "}
+            <Link to="/activities/new" className="text-blue-600 underline">
+              activity
+            </Link>
+            . 🎉
+          </p>
+        </div>
       )}
-  
+
       {/* List as cards */}
       <ul className="space-y-3">
         {state.data.map((a) => {
@@ -171,7 +187,7 @@ export default function ActivitiesList() {
           );
         })}
       </ul>
-  
+
       {/* Pagination */}
       <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
         <button
@@ -186,12 +202,12 @@ export default function ActivitiesList() {
         >
           Previous
         </button>
-  
+
         <span className="text-sm">
           Page {state.meta.page} / {totalPages} &nbsp;·&nbsp; Total{" "}
           {state.meta.total}
         </span>
-  
+
         <button
           className="px-3 py-2 border rounded disabled:opacity-50 transition"
           onClick={() =>
@@ -206,5 +222,5 @@ export default function ActivitiesList() {
         </button>
       </div>
     </section>
-  )
+  );
 }

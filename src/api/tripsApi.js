@@ -1,5 +1,17 @@
 import { client } from './client'
 
+function normalizeTrip(t) {
+  if (!t) return t;
+  // If backend already returns nested destination, keep it. Else build it.
+  const destination =
+    t.destination ??
+    (t.destinationCity || t.destinationCountry
+      ? { id: t.destinationId, city: t.destinationCity, country: t.destinationCountry }
+      : undefined);
+
+  return { ...t, destination };
+}
+
 export const listTrips = () =>
   client('/api/trips') 
 
