@@ -6,6 +6,7 @@ export default function Home() {
   const name = user?.fullName || user?.username || "there";
 
   return (
+    <main className="px-4">
     <section className="max-w-3xl mx-auto">
       <div className="bg-white/80 backdrop-blur rounded-2xl shadow p-6 ring-1 ring-gray-200">
         <h2 className="text-2xl font-bold">Welcome, {name}! 👋</h2>
@@ -60,5 +61,6 @@ export default function Home() {
         </div>
       </div>
     </section>
+    </main>
   );
 }

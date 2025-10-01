@@ -5,6 +5,7 @@ import App from "./ui/App.jsx";
 
 import RequireAuth from "./auth/RequireAuth.jsx";
 import Landing from "./ui/pages/Landing.jsx";
+import Home from "./ui/pages/Home.jsx";
 
 // Trips
 import TripsList from "./ui/trips/TripsList.jsx";
@@ -38,7 +39,7 @@ const router = createBrowserRouter([
       </RequireAuth>
     ),
     children: [
-      { index: true, element: <TripsList /> },
+      { index: true, element: <Home /> },
 
       // trips
       { path: "trips", element: <TripsList /> },

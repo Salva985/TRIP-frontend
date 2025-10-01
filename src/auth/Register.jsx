@@ -48,7 +48,7 @@ export default function Register() {
         fullName: fullName.trim(),
         email: email.trim(),
         dob,
-        password, // keep as-is
+        password, 
       });
       navigate("/login");
     } catch (e2) {
