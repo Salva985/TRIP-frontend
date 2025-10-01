@@ -153,26 +153,32 @@ export default function ActivityForm({ mode }) {
   async function onSubmit(e) {
     e.preventDefault();
     setError(null);
-
-    if (!form.title.trim()) return setError(new Error("Title is required"));
+  
+    if (!form.title?.trim()) return setError(new Error("Title is required"));
     if (!form.type?.trim())
-      return setError(
-        new Error(
-          "Type is required (SIGHTSEEING | ADVENTURE | CULTURAL | OTHER)"
-        )
-      );
+      return setError(new Error("Type is required (SIGHTSEEING | ADVENTURE | CULTURAL | OTHER)"));
     if (!form.date?.trim()) return setError(new Error("Date is required"));
-
+  
     try {
       if (isEdit) {
         const tripId = form.tripId || original?.tripId;
         if (!tripId) return setError(new Error("Trip is required"));
         await updateActivity(id, { form: { ...form, tripId }, original });
+        navigate(`/trips/${tripId}`);
       } else {
         if (!form.tripId) return setError(new Error("Trip is required"));
-        await createActivity({ ...form, tripId: Number(form.tripId) });
+  
+        // Pass a fallback so we can navigate even if backend doesn’t echo tripId
+        const res = await createActivity(
+          { ...form, tripId: Number(form.tripId) },
+          { fallbackTripId: Number(form.tripId) }
+        );
+  
+        const tripIdToGo =
+          (res && (res.tripId || res.trip?.id)) ?? Number(form.tripId);
+  
+        navigate(`/trips/${tripIdToGo}`);
       }
-      navigate("/");
     } catch (err) {
       setError(err);
     }
