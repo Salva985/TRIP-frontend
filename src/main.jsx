@@ -11,6 +11,9 @@ import Home from "./ui/pages/Home.jsx";
 import TripsList from "./ui/trips/TripsList.jsx";
 import TripDetails from "./ui/trips/TripDetails.jsx";
 import TripCreatePage from "./ui/trips/TripCreatePage.jsx";
+import TripForm from "./ui/trips/TripForm.jsx"; 
+import TripEditPage   from "./ui/trips/TripEditPage.jsx";
+
 
 // Activities
 import ActivitiesList from "./ui/activities/ActivitiesList.jsx";
@@ -45,12 +48,13 @@ const router = createBrowserRouter([
       { path: "trips", element: <TripsList /> },
       { path: "trips/new", element: <TripCreatePage /> },
       { path: "trips/:id", element: <TripDetails /> },
+      { path: "trips/:id/edit", element: <TripEditPage /> },
 
       // activities
       { path: "activities", element: <ActivitiesList /> },
       { path: "activities/new", element: <ActivityForm /> },
       { path: "activities/:id", element: <ActivityDetail /> },
-      { path: "activities/:id/edit", element: <ActivityForm edit /> },
+      { path: "activities/:id/edit", element: <ActivityForm mode="edit" /> },
     ],
   },
 

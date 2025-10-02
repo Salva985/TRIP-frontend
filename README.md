@@ -25,6 +25,16 @@ It connects to the Spring Boot backend to manage **Trips, Destinations, and Acti
   - Built with **TailwindCSS** for responsive design.
   - Works on desktop & ≤ 360px mobile.
   - Error states, loading states, and empty states included.
+- **Authentication**
+  - User registration and login with JWT.
+  - Protected routes with per-user data (each user sees only their own trips/activities).
+  - Logout support.
+- **Filtering**
+  - Trips: filter by *upcoming*, *past*, or *all*.
+  - Activities: filter by *upcoming*, *past*, or *all* (with server-side search & pagination).
+- **Editing UX**
+  - Edit forms show original values (with “was:” labels and a “Changed” pill).
+  - Empty states are friendly and guide users to next steps.
 
 ---
 
@@ -41,9 +51,16 @@ It connects to the Spring Boot backend to manage **Trips, Destinations, and Acti
 ## 🚀 Getting Started
 
 ### 1. Clone the repo
+#### Frontend
 ```bash
 git clone https://github.com/Salva985/tripapi-frontend.git
 cd tripapi-frontend
+````
+#### Backend
+```bash
+git clone https://github.com/Salva985/TRIPapi.git
+cd TRIPapi
+▶️ run from IntelliJ
 ````
 
 ### 2. Install dependencies

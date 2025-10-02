@@ -1,12 +1,15 @@
+// src/ui/activities/ActivitiesList.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { listActivities } from "../../api/activitiesApi";
 
 export default function ActivitiesList() {
   const [params, setParams] = useSearchParams();
+
   const page = Number(params.get("page") || 1);
   const pageSize = Number(params.get("pageSize") || 10);
   const search = params.get("search") || "";
+  const when = (params.get("when") || "all").toLowerCase(); // "all" | "past" | "upcoming"
 
   const [q, setQ] = useState(search);
   const [state, setState] = useState({
@@ -16,35 +19,91 @@ export default function ActivitiesList() {
     meta: { page, pageSize, total: 0 },
   });
 
-  // keep input in sync with URL
+  function updateParams(updater) {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      updater(next);
+      return next;
+    });
+  }
+
+  // keep input box in sync
   useEffect(() => setQ(search), [search]);
 
-  // debounce search -> update URL (resets to page 1)
+  // debounce search -> update URL (reset to page 1)
   useEffect(() => {
     const id = setTimeout(() => {
-      setParams((p) => {
+      updateParams((p) => {
         if (q.trim()) p.set("search", q.trim());
         else p.delete("search");
         p.set("page", "1");
         p.set("pageSize", String(pageSize));
-        return p;
+        p.set("when", when); // keep current filter
       });
     }, 400);
     return () => clearTimeout(id);
-  }, [q, pageSize, setParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, pageSize, when]);
 
-  // fetch from server (search/page/pageSize)
+  // fetch & (optionally) client-filter
   useEffect(() => {
     let off = false;
     setState((s) => ({ ...s, loading: true, error: null }));
-    listActivities({ search, page, pageSize })
+
+    // for "all": keep server pagination
+    if (when === "all") {
+      listActivities({ search, page, pageSize })
+        .then((res) => {
+          if (off) return;
+          setState({
+            loading: false,
+            error: null,
+            data: res.data,
+            meta: res.meta,
+          });
+        })
+        .catch((err) => {
+          if (off) return;
+          setState({
+            loading: false,
+            error: err,
+            data: [],
+            meta: { page, pageSize, total: 0 },
+          });
+        });
+      return () => { off = true; };
+    }
+
+    // for "past" / "upcoming": fetch a big page once, filter & paginate locally
+    const BIG = 1000; // adjust if needed; keeps backend unchanged
+    listActivities({ search, page: 1, pageSize: BIG })
       .then((res) => {
         if (off) return;
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const items = Array.isArray(res.data) ? res.data : [];
+
+        const filtered = items.filter((a) => {
+          const d = (a.date || "").slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false; // ignore malformed dates
+          if (when === "past") return d < todayStr;
+          if (when === "upcoming") return d >= todayStr;
+          return true;
+        });
+
+        // local paginate
+        const start = (page - 1) * pageSize;
+        const pageItems = filtered.slice(start, start + pageSize);
+
         setState({
           loading: false,
           error: null,
-          data: res.data,
-          meta: res.meta,
+          data: pageItems,
+          meta: {
+            page,
+            pageSize,
+            total: filtered.length,
+          },
         });
       })
       .catch((err) => {
@@ -56,10 +115,9 @@ export default function ActivitiesList() {
           meta: { page, pageSize, total: 0 },
         });
       });
-    return () => {
-      off = true;
-    };
-  }, [search, page, pageSize]);
+
+    return () => { off = true; };
+  }, [search, page, pageSize, when]);
 
   const totalPages = useMemo(() => {
     const { total, pageSize } = state.meta;
@@ -72,16 +130,33 @@ export default function ActivitiesList() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">All Activities</h2>
 
-        {/* right: per-page + New */}
         <div className="flex items-center gap-2">
+          {/* When filter (client-side) */}
+          <select
+            className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={when}
+            onChange={(e) =>
+              updateParams((p) => {
+                p.set("when", e.target.value);
+                p.set("page", "1"); // reset page on filter change
+              })
+            }
+            aria-label="Filter by time"
+            title="Filter"
+          >
+            <option value="all">All</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past</option>
+          </select>
+
+          {/* Page size */}
           <select
             className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={pageSize}
             onChange={(e) =>
-              setParams((p) => {
+              updateParams((p) => {
                 p.set("page", "1");
                 p.set("pageSize", e.target.value);
-                return p;
               })
             }
             aria-label="Items per page"
@@ -103,7 +178,7 @@ export default function ActivitiesList() {
         </div>
       </div>
 
-      {/* Search row (mobile shows New here) */}
+      {/* Search row */}
       <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
         <input
           className="w-full sm:w-96 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -131,10 +206,11 @@ export default function ActivitiesList() {
             : state.error.message}
         </p>
       )}
-
       {!state.loading && !state.error && state.data.length === 0 && (
         <div className="rounded-lg border border-dashed p-4 text-gray-700 bg-white">
-          <p className="font-medium">No activities yet.</p>
+          <p className="font-medium">
+            No {when !== "all" ? `${when} ` : ""}activities found.
+          </p>
           <p className="text-sm mt-1">
             Add your first{" "}
             <Link to="/trips/new" className="text-blue-600 underline">
@@ -149,7 +225,7 @@ export default function ActivitiesList() {
         </div>
       )}
 
-      {/* List as cards */}
+      {/* List */}
       <ul className="space-y-3">
         {state.data.map((a) => {
           const id = a.id ?? a.activityId ?? a.activityID ?? a._id;
@@ -192,30 +268,19 @@ export default function ActivitiesList() {
       <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
         <button
           className="px-3 py-2 border rounded disabled:opacity-50 transition"
-          onClick={() =>
-            setParams((p) => {
-              p.set("page", String(Math.max(1, page - 1)));
-              return p;
-            })
-          }
+          onClick={() => updateParams((p) => p.set("page", String(Math.max(1, page - 1))))}
           disabled={page <= 1 || state.loading}
         >
           Previous
         </button>
 
         <span className="text-sm">
-          Page {state.meta.page} / {totalPages} &nbsp;·&nbsp; Total{" "}
-          {state.meta.total}
+          Page {state.meta.page} / {totalPages} &nbsp;·&nbsp; Total {state.meta.total}
         </span>
 
         <button
           className="px-3 py-2 border rounded disabled:opacity-50 transition"
-          onClick={() =>
-            setParams((p) => {
-              p.set("page", String(page + 1));
-              return p;
-            })
-          }
+          onClick={() => updateParams((p) => p.set("page", String(page + 1)))}
           disabled={page >= totalPages || state.loading}
         >
           Next

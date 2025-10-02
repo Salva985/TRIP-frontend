@@ -24,6 +24,9 @@ export const createTrip = (dto) =>
 export const getTrip = (id) =>
     client(`/api/trips/${encodeURIComponent(id)}`)
 
+export const updateTrip = (id, body) =>
+  client(`/api/trips/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) });
+
 export const deleteTrip = (id) =>
     client(`/api/trips/${encodeURIComponent(id)}`, {
         method: "DELETE",

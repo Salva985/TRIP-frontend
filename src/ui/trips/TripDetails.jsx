@@ -1,40 +1,45 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { getTrip } from '../../api/tripsApi'
-import { listActivities } from '../../api/activitiesApi'
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { getTrip } from "../../api/tripsApi";
+import { listActivities } from "../../api/activitiesApi";
 
 export default function TripDetail() {
-  const { id } = useParams()
-  const [trip, setTrip] = useState(null)
-  const [acts, setActs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { id } = useParams();
+  const [trip, setTrip] = useState(null);
+  const [acts, setActs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let off = false
+    let off = false;
     async function load() {
-      setLoading(true); setError(null)
+      setLoading(true);
+      setError(null);
       try {
         const [t, list] = await Promise.all([
           getTrip(id),
-          listActivities({ page: 1, pageSize: 9999 }) // client-side filter
-        ])
-        if (off) return
-        setTrip(t)
-        setActs((list.data || []).filter(a => String(a.tripId) === String(id)))
+          listActivities({ page: 1, pageSize: 9999 }), // client-side filter
+        ]);
+        if (off) return;
+        setTrip(t);
+        setActs(
+          (list.data || []).filter((a) => String(a.tripId) === String(id))
+        );
       } catch (e) {
-        if (!off) setError(e)
+        if (!off) setError(e);
       } finally {
-        if (!off) setLoading(false)
+        if (!off) setLoading(false);
       }
     }
-    load()
-    return () => { off = true }
-  }, [id])
+    load();
+    return () => {
+      off = true;
+    };
+  }, [id]);
 
-  if (loading) return <p>Loading trip…</p>
-  if (error)   return <p className="text-red-600">Error: {error.message}</p>
-  if (!trip)   return <p>Not found</p>
+  if (loading) return <p>Loading trip…</p>;
+  if (error) return <p className="text-red-600">Error: {error.message}</p>;
+  if (!trip) return <p>Not found</p>;
 
   return (
     <section className="max-w-3xl mx-auto space-y-6">
@@ -46,17 +51,27 @@ export default function TripDetail() {
             <p className="text-sm text-gray-700 mt-1">
               {trip.startDate} – {trip.endDate}
               {trip.destination && (
-                <> · {trip.destination.city}, {trip.destination.country}</>
+                <>
+                  {" "}
+                  · {trip.destination.city}, {trip.destination.country}
+                </>
               )}
             </p>
           </div>
-
-          <Link
-            to={`/activities/new?tripId=${trip.id}`}
-            className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition whitespace-nowrap"
-          >
-            + Add Activity
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              to={`/trips/${trip.id}/edit`}
+              className="px-3 py-2 rounded border border-gray-300 hover:bg-gray-100 transition whitespace-nowrap"
+            >
+              Edit Trip
+            </Link>
+            <Link
+              to={`/activities/new?tripId=${trip.id}`}
+              className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition whitespace-nowrap"
+            >
+              Add Activity
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -68,10 +83,15 @@ export default function TripDetail() {
           <p className="text-gray-700">No activities for this trip yet.</p>
         ) : (
           <ul className="space-y-3">
-            {acts.map(a => (
-              <li key={a.id} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between shadow-sm">
+            {acts.map((a) => (
+              <li
+                key={a.id}
+                className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between shadow-sm"
+              >
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{a.title || `Activity #${a.id}`}</p>
+                  <p className="font-medium truncate">
+                    {a.title || `Activity #${a.id}`}
+                  </p>
                   <p className="text-sm text-gray-600 mt-0.5">
                     {a.date} • {a.type}
                   </p>
@@ -106,5 +126,5 @@ export default function TripDetail() {
         </Link>
       </div>
     </section>
-  )
+  );
 }

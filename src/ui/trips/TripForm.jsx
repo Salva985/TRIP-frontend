@@ -1,11 +1,13 @@
-// src/ui/TripForm.jsx
-import { useEffect, useState } from "react";
-import { createTrip } from "../../api/tripsApi";
+// src/ui/trips/TripForm.jsx
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { createTrip, getTrip, updateTrip } from "../../api/tripsApi";
 import { listDestinations, createDestination } from "../../api/destinationsApi";
+import { changed, Was, ChangedPill } from "../../helpers/formDiffHelpers";
 
 function toYMD(v) {
   if (!v) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v; // already ok
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
   const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
   if (m) return `${m[3]}-${m[2]}-${m[1]}`;
   const d = new Date(v);
@@ -13,7 +15,18 @@ function toYMD(v) {
   return v;
 }
 
-export default function TripForm({ onSuccess, onCancel }) {
+// just an alias used for “was:” display
+const fmtYMD = toYMD;
+
+export default function TripForm({ onSuccess, onCancel, mode, edit }) {
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isEdit =
+    mode === "edit" || edit === true || (id && location.pathname.endsWith("/edit"));
+
+  // form state
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -21,10 +34,16 @@ export default function TripForm({ onSuccess, onCancel }) {
   const [tripType, setTripType] = useState("");
   const [notes, setNotes] = useState("");
 
+  // original for comparison (edit)
+  const [original, setOriginal] = useState(null);
+  const [loading, setLoading] = useState(isEdit);
+
+  // destinations
   const [destinations, setDestinations] = useState([]);
   const [destLoading, setDestLoading] = useState(true);
   const [destError, setDestError] = useState(null);
 
+  // inline create dest
   const [creatingDest, setCreatingDest] = useState(false);
   const [newCity, setNewCity] = useState("");
   const [newCountry, setNewCountry] = useState("");
@@ -32,26 +51,42 @@ export default function TripForm({ onSuccess, onCancel }) {
   const [newCurrency, setNewCurrency] = useState("");
   const [destCreateError, setDestCreateError] = useState(null);
 
+  // submit state
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Load destinations once
   useEffect(() => {
     let off = false;
     setDestLoading(true);
     listDestinations()
-      .then((data) => {
-        if (!off) setDestinations(data || []);
-      })
-      .catch((e) => {
-        if (!off) setDestError(e);
-      })
-      .finally(() => {
-        if (!off) setDestLoading(false);
-      });
-    return () => {
-      off = true;
-    };
+      .then((data) => { if (!off) setDestinations(data || []); })
+      .catch((e) => { if (!off) setDestError(e); })
+      .finally(() => { if (!off) setDestLoading(false); });
+    return () => { off = true; };
   }, []);
+
+  // Load trip when editing
+  useEffect(() => {
+    if (!isEdit) return;
+    let off = false;
+    setLoading(true);
+    setError(null);
+    getTrip(id)
+      .then((t) => {
+        if (off) return;
+        setOriginal(t);
+        setName(t.name || "");
+        setStartDate(fmtYMD(t.startDate));
+        setEndDate(fmtYMD(t.endDate));
+        setDestinationId(t.destination?.id ?? t.destinationId ?? "");
+        setTripType(t.tripType || "");
+        setNotes(t.notes || "");
+      })
+      .catch((e) => { if (!off) setError(e); })
+      .finally(() => { if (!off) setLoading(false); });
+    return () => { off = true; };
+  }, [id, isEdit]);
 
   function onDestinationChange(e) {
     const v = e.target.value;
@@ -86,19 +121,11 @@ export default function TripForm({ onSuccess, onCancel }) {
     }
 
     try {
-      const created = await createDestination({
-        city,
-        country,
-        timezone,
-        currencyCode,
-      });
+      const created = await createDestination({ city, country, timezone, currencyCode });
       setDestinations((prev) => [...prev, created]);
       setDestinationId(created.id);
       setCreatingDest(false);
-      setNewCity("");
-      setNewCountry("");
-      setNewTz("");
-      setNewCurrency("");
+      setNewCity(""); setNewCountry(""); setNewTz(""); setNewCurrency("");
     } catch (err) {
       setDestCreateError(err);
     }
@@ -118,45 +145,61 @@ export default function TripForm({ onSuccess, onCancel }) {
       notes: notes.trim() || undefined,
     };
 
-    if (!payload.name) {
-      setSubmitting(false);
-      return setError(new Error("Trip name is required"));
-    }
-    if (!payload.startDate) {
-      setSubmitting(false);
-      return setError(new Error("Start date is required"));
-    }
-    if (!payload.endDate) {
-      setSubmitting(false);
-      return setError(new Error("End date is required"));
-    }
-    if (!payload.destinationId) {
-      setSubmitting(false);
-      return setError(new Error("Destination is required"));
-    }
-    if (payload.endDate < payload.startDate) {
-      setSubmitting(false);
-      return setError(new Error("End date must be after start date"));
-    }
+    const fail = (msg) => { setSubmitting(false); setError(new Error(msg)); };
+
+    // validations
+    if (!payload.name) return fail("Trip name is required");
+    if (!payload.startDate) return fail("Start date is required");
+    if (!payload.endDate) return fail("End date is required");
+    if (!payload.destinationId) return fail("Destination is required");
+    if (payload.endDate < payload.startDate) return fail("End date must be after start date");
 
     try {
-      console.log("TRIP CREATE payload →", payload);
-      const created = await createTrip(payload);
-      onSuccess?.(created);
+      if (isEdit) {
+        await updateTrip(id, payload);
+        navigate(`/trips/${id}`);
+      } else {
+        const created = await createTrip(payload);
+        onSuccess?.(created);
+      }
     } catch (err) {
       setError(err);
     } finally {
       setSubmitting(false);
     }
   }
+
+  const originalDestLabel = useMemo(() => {
+    if (!original) return "";
+    const city = original.destination?.city ?? original.destinationCity;
+    const country = original.destination?.country ?? original.destinationCountry;
+    if (!city && !country) return `#${original.destinationId || "—"}`;
+    return `${city || ""}${city && country ? ", " : ""}${country || ""}`;
+  }, [original]);
+
+  if (loading) return <p>Loading…</p>;
+
   return (
     <section className="max-w-2xl">
-      <h2 className="text-xl font-semibold mb-3">New Trip</h2>
-  
-      <form onSubmit={onSubmit} className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 sm:p-6 space-y-4">
+      <h2 className="text-xl font-semibold mb-3">
+        {isEdit ? "Edit Trip" : "New Trip"}
+      </h2>
+
+      <form
+        onSubmit={onSubmit}
+        className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 sm:p-6 space-y-4"
+      >
         {/* Trip name */}
         <label className="block">
-          <span className="text-sm text-gray-700">Trip name <span className="text-red-500">*</span></span>
+          <span className="text-sm text-gray-700">
+            Trip name <span className="text-red-500">*</span>
+            {isEdit && original && (
+              <>
+                <span className="mx-2"><Was value={original.name} /></span>
+                <ChangedPill on={changed(name, original.name)} />
+              </>
+            )}
+          </span>
           <input
             className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={name}
@@ -164,11 +207,19 @@ export default function TripForm({ onSuccess, onCancel }) {
             placeholder="e.g. London Adventure Week"
           />
         </label>
-  
+
         {/* Dates */}
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="block">
-            <span className="text-sm text-gray-700">Start date <span className="text-red-500">*</span></span>
+            <span className="text-sm text-gray-700">
+              Start date <span className="text-red-500">*</span>
+              {isEdit && original && (
+                <>
+                  <span className="mx-2"><Was value={fmtYMD(original.startDate)} /></span>
+                  <ChangedPill on={changed(startDate, fmtYMD(original.startDate))} />
+                </>
+              )}
+            </span>
             <input
               type="date"
               className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -176,9 +227,17 @@ export default function TripForm({ onSuccess, onCancel }) {
               onChange={(e) => setStartDate(e.target.value)}
             />
           </label>
-  
+
           <label className="block">
-            <span className="text-sm text-gray-700">End date <span className="text-red-500">*</span></span>
+            <span className="text-sm text-gray-700">
+              End date <span className="text-red-500">*</span>
+              {isEdit && original && (
+                <>
+                  <span className="mx-2"><Was value={fmtYMD(original.endDate)} /></span>
+                  <ChangedPill on={changed(endDate, fmtYMD(original.endDate))} />
+                </>
+              )}
+            </span>
             <input
               type="date"
               className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -187,10 +246,23 @@ export default function TripForm({ onSuccess, onCancel }) {
             />
           </label>
         </div>
-  
+
         {/* Destination selector */}
         <label className="block">
-          <span className="text-sm text-gray-700">Destination <span className="text-red-500">*</span></span>
+          <span className="text-sm text-gray-700">
+            Destination <span className="text-red-500">*</span>
+            {isEdit && original && (
+              <>
+                <span className="mx-2"><Was value={originalDestLabel} /></span>
+                <ChangedPill
+                  on={changed(
+                    String(destinationId || ""),
+                    String(original.destination?.id ?? original.destinationId ?? "")
+                  )}
+                />
+              </>
+            )}
+          </span>
           <select
             className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={creatingDest ? "__new_dest__" : destinationId || ""}
@@ -211,7 +283,7 @@ export default function TripForm({ onSuccess, onCancel }) {
             <option value="__new_dest__">+ New destination…</option>
           </select>
         </label>
-  
+
         {/* Inline NEW destination */}
         {creatingDest && (
           <div className="space-y-3 border rounded-lg p-3 sm:p-4 bg-gray-50">
@@ -246,11 +318,11 @@ export default function TripForm({ onSuccess, onCancel }) {
                 <option value="OTHER">OTHER</option>
               </select>
             </div>
-  
+
             {destCreateError && (
               <p className="text-sm text-red-600">{destCreateError.message}</p>
             )}
-  
+
             <div className="flex gap-2">
               <button
                 type="button"
@@ -276,11 +348,19 @@ export default function TripForm({ onSuccess, onCancel }) {
             </div>
           </div>
         )}
-  
+
         {/* Optional fields */}
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="block">
-            <span className="text-sm text-gray-700">Trip type (optional)</span>
+            <span className="text-sm text-gray-700">
+              Trip type (optional)
+              {isEdit && original && (
+                <>
+                  <span className="mx-2"><Was value={original.tripType || "—"} /></span>
+                  <ChangedPill on={changed(tripType || "", original.tripType || "")} />
+                </>
+              )}
+            </span>
             <select
               className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={tripType}
@@ -293,9 +373,17 @@ export default function TripForm({ onSuccess, onCancel }) {
               <option value="OTHER">OTHER</option>
             </select>
           </label>
-  
+
           <label className="block">
-            <span className="text-sm text-gray-700">Notes (optional)</span>
+            <span className="text-sm text-gray-700">
+              Notes (optional)
+              {isEdit && original && (
+                <>
+                  <span className="mx-2"><Was value={original.notes || "—"} /></span>
+                  <ChangedPill on={changed(notes || "", original.notes || "")} />
+                </>
+              )}
+            </span>
             <input
               className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={notes}
@@ -304,14 +392,16 @@ export default function TripForm({ onSuccess, onCancel }) {
             />
           </label>
         </div>
-  
+
         {/* Error */}
         {error && (
           <p className="text-sm text-red-600">
-            {error.detail || error.message || "Failed to create trip"}
+            {error.detail ||
+              error.message ||
+              (isEdit ? "Failed to update trip" : "Failed to create trip")}
           </p>
         )}
-  
+
         {/* Actions */}
         <div className="flex gap-2">
           <button
@@ -319,11 +409,11 @@ export default function TripForm({ onSuccess, onCancel }) {
             disabled={submitting}
             className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {submitting ? "Creating…" : "Create trip"}
+            {submitting ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save" : "Create trip")}
           </button>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={onCancel ?? (() => history.back())}
             className="px-4 py-2 rounded border hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Cancel
@@ -331,5 +421,5 @@ export default function TripForm({ onSuccess, onCancel }) {
         </div>
       </form>
     </section>
-  )
+  );
 }
