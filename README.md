@@ -1,4 +1,5 @@
 # TripAPI Frontend 🌍✈️
+##### TRIP Travel Routes & Itinerary Planner
 
 Frontend React app for **TripAPI**, a travel & trip planner.  
 It connects to the Spring Boot backend to manage **Trips, Destinations, and Activities** with full CRUD.
@@ -44,7 +45,7 @@ It connects to the Spring Boot backend to manage **Trips, Destinations, and Acti
 
 - **Frontend**: React (Vite, React Router, Hooks, Fetch)
 - **Styling**: TailwindCSS
-- **Backend**: Spring Boot + JPA + PostgreSQL/H2 (see backend repo)
+- **Backend**: Spring Boot + JPA + PostgreSQL/H2 (see backend repo, on 🚀 Getting Started)
 - **API**: REST (JSON)
 - **Tools**: Postman for testing, npm scripts for dev/build
 
@@ -53,12 +54,12 @@ It connects to the Spring Boot backend to manage **Trips, Destinations, and Acti
 ## 🚀 Getting Started
 
 ### 1. Clone the repo
-#### Frontend
+#### Frontend 
 ```bash
 git clone https://github.com/Salva985/tripapi-frontend.git
 cd tripapi-frontend
 ````
-#### Backend
+#### Backend 
 ```bash
 git clone https://github.com/Salva985/TRIPapi.git
 cd TRIPapi
