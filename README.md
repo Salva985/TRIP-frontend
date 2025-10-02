@@ -12,6 +12,8 @@ It connects to the Spring Boot backend to manage **Trips, Destinations, and Acti
   - Create new trips (with destinations inline).
   - View, edit, and delete trips (cascade deletes activities).
    - Trip types supported: `LEISURE`, `BUSINESS`, `ADVENTURE`, `OTHER`.
+  -	Data is scoped per authenticated user — each user only sees their own trips.
+(The demo user *salva@example.com/secret123* is seeded with four trips and two activities each to explore the app immediately).
 - **Activities**
   - List activities (with server-side search & pagination).
   - Create, edit, delete activities inside trips.
